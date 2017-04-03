@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_margin="4dp"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_margin="4dp"
     android:orientation="vertical">
 
     <TextView
         android:id="@+id/tvFrom"
-        android:text="@string/email"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="4dp"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp"
+        android:paddingStart="4dp"
+        android:paddingTop="4dp"
+        android:text="@string/email"
         android:textColor="#0745ed"
         android:textSize="14sp" />
 
@@ -18,12 +21,19 @@
         android:id="@+id/tvMsgBody"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="4dp"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp"
+        android:paddingStart="4dp"
+        android:paddingTop="4dp"
         android:textColor="#fff"
         android:textSize="14sp" />
+
     <TextView
-        android:padding="4dp"
         android:id="@+id/tvChatTime"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp"
+        android:paddingStart="4dp"
+        android:paddingTop="4dp" />
 </LinearLayout>

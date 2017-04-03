@@ -15,6 +15,7 @@ import com.chat.app.R;
 import com.chat.app.model.ChatMessage;
 import com.chat.app.ui.adapter.MessageAdapter;
 import com.chat.app.utility.PrefsUtil;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -23,7 +24,6 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,6 +40,8 @@ public class ChatScreen extends AppCompatActivity {
     EditText etMessage;
     RecyclerView rvMessage;
     RecyclerView.Adapter adapter;
+    ArrayList<ChatMessage> messageArrayList = new ArrayList<>();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +53,8 @@ public class ChatScreen extends AppCompatActivity {
 
         LinearLayoutManager manager = new LinearLayoutManager(this);
         rvMessage.setLayoutManager(manager);
+        adapter = new MessageAdapter(ChatScreen.this, messageArrayList);
+        rvMessage.setAdapter(adapter);
         toEmail = getIntent().getStringExtra(EMAIL);
         fromEmail = PrefsUtil.getEmail(this);
         Log.e("DB", toEmail);
@@ -116,53 +120,65 @@ public class ChatScreen extends AppCompatActivity {
             public void onClick(View v) {
                 String messageBody = etMessage.getText().toString().trim();
                 if (messageBody.length() > 0) {
-                    long time=System.currentTimeMillis();
-
-                    ChatMessage message = new ChatMessage(messageBody, toEmail, fromEmail,time);
+                    long time = System.currentTimeMillis();
+                    ChatMessage message = new ChatMessage(messageBody, toEmail, fromEmail, time);
                     messageRef.child(chatKey).push().setValue(message);
                     etMessage.setText("");
                     View view = getCurrentFocus();
                     if (view != null) {
-                        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
                     }
                 }
             }
         });
-
-
     }
 
-    private void chatListener(String chatKey) {
+    private void chatListener(final String chatKey) {
 
-        Query query = messageRef.child(chatKey).orderByChild("messageBody");
-
+        Query query = messageRef.child(chatKey).orderByChild("timestamp");
         query.addValueEventListener(new ValueEventListener() {
             @SuppressWarnings("unchecked")
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                Log.e("DBChat", "child added");
-                Log.e("DB1233", String.valueOf(dataSnapshot.getValue()));
-                Map<String, Object> chatMap = (HashMap<String, Object>)
-                        dataSnapshot.getValue();
-                ArrayList<ChatMessage> messageArrayList = new ArrayList<>();
+                Map<String, Object> chatMap;
                 messageArrayList.clear();
-                for (Object ob : chatMap.values()) {
-
-                    if (ob instanceof Map) {
-                        Map<String, Object> messageMap = (Map<String, Object>) ob;
+                for (DataSnapshot da : dataSnapshot.getChildren()) {
+                    if (da.getValue() instanceof Map) {
+                        chatMap = (HashMap<String, Object>)
+                                da.getValue();
+                        Log.e("DBC", String.valueOf(chatMap));
+                        Map<String, Object> messageMap = chatMap;
                         ChatMessage chatMessage = new ChatMessage();
                         chatMessage.setFrom((String) messageMap.get("from"));
                         chatMessage.setTo((String) messageMap.get("to"));
                         chatMessage.setMessageBody((String) messageMap.get("messageBody"));
                         chatMessage.setTimestamp((long) messageMap.get("timestamp"));
-                        Log.e("DB",(String) messageMap.get("messageBody"));
                         messageArrayList.add(chatMessage);
                     }
                 }
-                Log.e("DB", String.valueOf(messageArrayList.size()));
-                adapter = new MessageAdapter(ChatScreen.this, messageArrayList);
-                rvMessage.setAdapter(adapter);
+//
+//
+//                Map<String, Object> chatMap = (HashMap<String, Object>)
+//                        dataSnapshot.getValue();
+//
+//                for (Object ob : chatMap.values()) {
+//
+//                    if (ob instanceof Map) {
+//                        Map<String, Object> messageMap = (Map<String, Object>) ob;
+//                        ChatMessage chatMessage = new ChatMessage();
+//                        chatMessage.setFrom((String) messageMap.get("from"));
+//                        chatMessage.setTo((String) messageMap.get("to"));
+//                        chatMessage.setMessageBody((String) messageMap.get("messageBody"));
+//                        chatMessage.setTimestamp((long) messageMap.get("timestamp"));
+//                        Log.e("DB",(String) messageMap.get("messageBody"));
+//                        messageArrayList.add(chatMessage);
+//                    }
+//                }
+                adapter.notifyDataSetChanged();
+                rvMessage.scrollToPosition(rvMessage.getAdapter().getItemCount() - 1);
+
+
             }
 
             @Override
@@ -170,5 +186,71 @@ public class ChatScreen extends AppCompatActivity {
 
             }
         });
+
+//        query.addChildEventListener(new ChildEventListener() {
+//            @SuppressWarnings("unchecked")
+//            @Override
+//            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+//                Map<String, Object> chatMap;
+//                Log.e("DBC", String.valueOf(dataSnapshot.getChildrenCount()));
+//                for (DataSnapshot da : dataSnapshot.getChildren()) {
+//                    Log.e("DBC", String.valueOf(da));
+//                    Log.e("DBCFrom", String.valueOf(da.child("from").getValue()));
+//                    if (da.getValue() instanceof Map) {
+//                        chatMap = (HashMap<String, Object>)
+//                                da.getValue();
+//                        Log.e("DBC", String.valueOf(chatMap));
+//                        Map<String, Object> messageMap = chatMap;
+//                        ChatMessage chatMessage = new ChatMessage();
+//                        chatMessage.setFrom((String) messageMap.get("from"));
+//                        chatMessage.setTo((String) messageMap.get("to"));
+//                        chatMessage.setMessageBody((String) messageMap.get("messageBody"));
+//                        chatMessage.setTimestamp((long) messageMap.get("timestamp"));
+//                        messageArrayList.add(chatMessage);
+//                    }
+////
+////
+////                Map<String, Object> chatMap = (HashMap<String, Object>)
+////                        dataSnapshot.getValue();
+////
+////                for (Object ob : chatMap.values()) {
+////
+////                    if (ob instanceof Map) {
+////                        Map<String, Object> messageMap = (Map<String, Object>) ob;
+////                        ChatMessage chatMessage = new ChatMessage();
+////                        chatMessage.setFrom((String) messageMap.get("from"));
+////                        chatMessage.setTo((String) messageMap.get("to"));
+////                        chatMessage.setMessageBody((String) messageMap.get("messageBody"));
+////                        chatMessage.setTimestamp((long) messageMap.get("timestamp"));
+////                        Log.e("DB", (String) messageMap.get("messageBody"));
+////                        messageArrayList.add(chatMessage);
+////                    }
+//
+//                    adapter.notifyItemInserted(messageArrayList.size());
+//                    adapter.notifyDataSetChanged();
+//                    rvMessage.scrollToPosition(rvMessage.getAdapter().getItemCount() - 1);
+//                }
+//            }
+//
+//            @Override
+//            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+//
+//            }
+//
+//            @Override
+//            public void onChildRemoved(DataSnapshot dataSnapshot) {
+//
+//            }
+//
+//            @Override
+//            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+//
+//            }
+//
+//            @Override
+//            public void onCancelled(DatabaseError databaseError) {
+//
+//            }
+//        });
     }
 }
