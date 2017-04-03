@@ -1,6 +1,7 @@
 package com.chat.app;
 
 import android.app.Application;
+import android.support.multidex.MultiDex;
 
 
 /*
@@ -11,9 +12,7 @@ public class Chat extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-
-
-
+        MultiDex.install(this);
     }
 
 //    @Override

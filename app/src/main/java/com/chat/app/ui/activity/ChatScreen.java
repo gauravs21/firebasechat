@@ -1,21 +1,25 @@
 package com.chat.app.ui.activity;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 
+import com.chat.app.Chat;
 import com.chat.app.R;
 import com.chat.app.model.ChatMessage;
 import com.chat.app.ui.adapter.MessageAdapter;
 import com.chat.app.utility.PrefsUtil;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -147,7 +151,7 @@ public class ChatScreen extends AppCompatActivity {
                     if (da.getValue() instanceof Map) {
                         chatMap = (HashMap<String, Object>)
                                 da.getValue();
-                        Log.e("DBC", String.valueOf(chatMap));
+//                        Log.e("DBC", String.valueOf(chatMap));
                         Map<String, Object> messageMap = chatMap;
                         ChatMessage chatMessage = new ChatMessage();
                         chatMessage.setFrom((String) messageMap.get("from"));
@@ -177,8 +181,6 @@ public class ChatScreen extends AppCompatActivity {
 //                }
                 adapter.notifyDataSetChanged();
                 rvMessage.scrollToPosition(rvMessage.getAdapter().getItemCount() - 1);
-
-
             }
 
             @Override
@@ -252,5 +254,27 @@ public class ChatScreen extends AppCompatActivity {
 //
 //            }
 //        });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.chat_options, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        super.onOptionsItemSelected(item);
+        switch (item.getItemId()) {
+            case R.id.upload_document:
+                searchDocuments();
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private void searchDocuments() {
+        startActivity(new Intent(ChatScreen.this,DocumentList.class));
     }
 }
