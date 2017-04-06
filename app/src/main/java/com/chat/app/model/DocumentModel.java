@@ -4,16 +4,20 @@ package com.chat.app.model;
  * Created by kopite on 4/4/17.
  */
 
-public class DocumentModel {
+import java.io.Serializable;
+
+public class DocumentModel implements Serializable {
     private String path;
     private String name;
     private String type;
+    private long fileLength;
 
 
-    public DocumentModel(String absolutePath, String name, String type) {
+    public DocumentModel(String absolutePath, String name, String type, long fileLength) {
         this.type = type;
         this.name = name;
         this.path = absolutePath;
+        this.fileLength=fileLength;
     }
 
     public String getPath() {
@@ -41,5 +45,13 @@ public class DocumentModel {
     }
 
     public DocumentModel() {
+    }
+
+    public long getFileLength() {
+        return fileLength;
+    }
+
+    public void setFileLength(long fileLength) {
+        this.fileLength = fileLength;
     }
 }

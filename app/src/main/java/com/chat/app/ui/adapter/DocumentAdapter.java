@@ -4,17 +4,24 @@ package com.chat.app.ui.adapter;
  * Created by kopite on 3/4/17.
  */
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.chat.app.R;
 import com.chat.app.model.DocumentModel;
+import com.chat.app.ui.activity.ChatScreen;
 import com.chat.app.utility.Constants;
+import com.chat.app.utility.UserUtils;
 
 import java.util.ArrayList;
 
@@ -28,7 +35,7 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.Docume
         this.fileName = fileName;
         this.filePath = filelist;
         this.context = context;
-        this.modelArrayList=modelArrayList;
+        this.modelArrayList = modelArrayList;
     }
 
     @Override
@@ -39,12 +46,13 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.Docume
 
     @Override
     public void onBindViewHolder(DocumentHolder holder, int position) {
-        DocumentModel model=modelArrayList.get(holder.getAdapterPosition());
+        final DocumentModel model = modelArrayList.get(holder.getAdapterPosition());
 //        Log.e("DBType",model.getType());
         holder.tvPathName.setText(model.getPath());
         holder.tvFileName.setText(model.getName());
-
-        switch (model.getType()){
+        String fileSize = UserUtils.getFileSize(model.getFileLength());
+        holder.tvFileSize.setText(fileSize);
+        switch (model.getType()) {
             case Constants.DocumentExtension.TXT:
                 holder.ivDocumentType.setBackgroundResource(R.drawable.txt);
                 break;
@@ -70,6 +78,17 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.Docume
                 holder.ivDocumentType.setBackgroundResource(R.drawable.pdf);
                 break;
         }
+        holder.relativeLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent returnIntent = new Intent();
+//                Bundle bundle=new Bundle();
+//                bundle.putSerializable(ChatScreen.FILE,model);
+                returnIntent.putExtra(ChatScreen.FILE, model);
+                ((Activity) context).setResult(Activity.RESULT_OK, returnIntent);
+                ((Activity) context).finish();
+            }
+        });
     }
 
     @Override
@@ -78,15 +97,17 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.Docume
     }
 
     class DocumentHolder extends RecyclerView.ViewHolder {
-        TextView tvFileName, tvPathName;
+        TextView tvFileName, tvPathName, tvFileSize;
         ImageView ivDocumentType;
+        RelativeLayout relativeLayout;
 
         DocumentHolder(View itemView) {
             super(itemView);
             tvFileName = (TextView) itemView.findViewById(R.id.row_document_name);
             tvPathName = (TextView) itemView.findViewById(R.id.row_document_path);
+            tvFileSize = (TextView) itemView.findViewById(R.id.row_document_size);
             ivDocumentType = (ImageView) itemView.findViewById(R.id.row_document_iv_type);
-
+            relativeLayout = (RelativeLayout) itemView.findViewById(R.id.row_document_rl_parent);
         }
     }
 }

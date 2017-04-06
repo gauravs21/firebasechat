@@ -6,10 +6,13 @@ import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.chat.app.R;
 import com.chat.app.model.ChatMessage;
+import com.chat.app.utility.Constants;
 import com.chat.app.utility.PrefsUtil;
 
 import java.text.SimpleDateFormat;
@@ -45,10 +48,18 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
     @Override
     public void onBindViewHolder(MessageHolder holder, int position) {
         ChatMessage chatMessage = chatMessages.get(position);
-        holder.tvFrom.setText(chatMessage.getFrom());
-        holder.tvMessageBody.setText(chatMessage.getMessageBody());
-        SimpleDateFormat sdf = new SimpleDateFormat("h:mm a", Locale.US);
-        holder.tvChatTime.setText(sdf.format(chatMessage.getTimestamp()));
+        String messageType = chatMessage.getMessageType();
+        if (messageType.equals(Constants.MSG_TYPE.NORMAL)) {
+            holder.tvFrom.setText(chatMessage.getFrom());
+            holder.tvMessageBody.setText(chatMessage.getMessageBody());
+            SimpleDateFormat sdf = new SimpleDateFormat("h:mm a", Locale.US);
+            holder.tvChatTime.setText(sdf.format(chatMessage.getTimestamp()));
+            holder.relativeLayout.setVisibility(View.GONE);
+        } else {
+            holder.tvMessageBody.setVisibility(View.GONE);
+//            holder.tvFileName.setText();
+
+        }
 
     }
 
@@ -58,7 +69,9 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
     }
 
     class MessageHolder extends RecyclerView.ViewHolder {
-        TextView tvFrom, tvMessageBody,tvChatTime;
+        TextView tvFrom, tvMessageBody, tvChatTime, tvFileName, tvFileSize;
+        RelativeLayout relativeLayout;
+        ImageView ivDownload, ivCoverImage;
 
         MessageHolder(View itemView) {
             super(itemView);
@@ -66,7 +79,13 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
             tvMessageBody = (TextView) itemView.findViewById(R.id.tvMsgBody);
             int width = context.getResources().getDisplayMetrics().widthPixels;
             tvMessageBody.setMaxWidth((int) (width * 0.8));
-            tvChatTime= (TextView) itemView.findViewById(R.id.tvChatTime);
+            tvChatTime = (TextView) itemView.findViewById(R.id.tvChatTime);
+            relativeLayout = (RelativeLayout) itemView.findViewById(R.id.rl_document);
+            tvFileName = (TextView) itemView.findViewById(R.id.tv_doc_title);
+            tvFileSize = (TextView) itemView.findViewById(R.id.tv_doc_size);
+            ivDownload = (ImageView) itemView.findViewById(R.id.iv_download);
+            ivCoverImage = (ImageView) itemView.findViewById(R.id.iv_cover_type);
+            tvFileName.setMaxWidth((int) (width*0.8));
         }
     }
 

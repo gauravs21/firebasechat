@@ -1,9 +1,10 @@
 package com.chat.app.ui.activity;
 
-import android.content.Context;
+import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -11,22 +12,31 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
-import com.chat.app.Chat;
 import com.chat.app.R;
 import com.chat.app.model.ChatMessage;
+import com.chat.app.model.DocumentModel;
 import com.chat.app.ui.adapter.MessageAdapter;
+import com.chat.app.utility.Constants;
 import com.chat.app.utility.PrefsUtil;
+import com.chat.app.utility.UserUtils;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,18 +44,20 @@ import java.util.Map;
 public class ChatScreen extends AppCompatActivity {
 
     public static final String EMAIL = "email";
+    public static final String FILE = "file";
     DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
     DatabaseReference messageRef = reference.child("chats");
     DatabaseReference newChat = messageRef.push();
-    String toEmail, fromEmail;
-    String chatKey;
+    StorageReference docRef;
+    String toEmail, fromEmail, fileSize, chatKey;
     boolean newUser = true;
     FrameLayout frameLayout;
     EditText etMessage;
     RecyclerView rvMessage;
     RecyclerView.Adapter adapter;
     ArrayList<ChatMessage> messageArrayList = new ArrayList<>();
-
+    StorageReference storageRef = FirebaseStorage.getInstance().getReference();
+    String messageType;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,14 +137,15 @@ public class ChatScreen extends AppCompatActivity {
                 String messageBody = etMessage.getText().toString().trim();
                 if (messageBody.length() > 0) {
                     long time = System.currentTimeMillis();
-                    ChatMessage message = new ChatMessage(messageBody, toEmail, fromEmail, time);
+
+                    ChatMessage message = new ChatMessage(messageBody, toEmail, fromEmail, time, Constants.MSG_TYPE.NORMAL,0);
                     messageRef.child(chatKey).push().setValue(message);
                     etMessage.setText("");
-                    View view = getCurrentFocus();
-                    if (view != null) {
-                        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-                    }
+//                    View view = getCurrentFocus();
+//                    if (view != null) {
+//                        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+//                        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+//                    }
                 }
             }
         });
@@ -157,6 +170,7 @@ public class ChatScreen extends AppCompatActivity {
                         chatMessage.setFrom((String) messageMap.get("from"));
                         chatMessage.setTo((String) messageMap.get("to"));
                         chatMessage.setMessageBody((String) messageMap.get("messageBody"));
+                        chatMessage.setMessageType((String) messageMap.get("messageType"));
                         chatMessage.setTimestamp((long) messageMap.get("timestamp"));
                         messageArrayList.add(chatMessage);
                     }
@@ -275,6 +289,84 @@ public class ChatScreen extends AppCompatActivity {
     }
 
     private void searchDocuments() {
-        startActivity(new Intent(ChatScreen.this,DocumentList.class));
+//        startActivity();
+        startActivityForResult(new Intent(ChatScreen.this, DocumentList.class), Constants.REQUEST_CODE.GET_DOC);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, final Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        //result ok
+        if (resultCode == Activity.RESULT_OK) {
+            switch (requestCode) {
+                //for doc
+                case Constants.REQUEST_CODE.GET_DOC: {
+                    Log.e("DB", String.valueOf(data));
+                    final DocumentModel document = (DocumentModel) data.getSerializableExtra(FILE);
+
+                    switch (document.getType()) {
+                        case Constants.DocumentExtension.TXT:
+                            messageType = Constants.MSG_TYPE.TEXT;
+                            break;
+                        case Constants.DocumentExtension.PPT:
+                            messageType = Constants.MSG_TYPE.PPT;
+                            break;
+                        case Constants.DocumentExtension.PPTX:
+                            messageType = Constants.MSG_TYPE.PPT;
+                            break;
+                        case Constants.DocumentExtension.XLS:
+                            messageType = Constants.MSG_TYPE.EXCEL_SHEET;
+                            break;
+                        case Constants.DocumentExtension.XLSX:
+                            messageType = Constants.MSG_TYPE.EXCEL_SHEET;
+                            break;
+                        case Constants.DocumentExtension.DOC:
+                            messageType = Constants.MSG_TYPE.DOC;
+                            break;
+                        case Constants.DocumentExtension.DOCX:
+                            messageType = Constants.MSG_TYPE.DOC;
+                            break;
+                        case Constants.DocumentExtension.PDF:
+                            messageType = Constants.MSG_TYPE.PDF;
+                            break;
+                    }
+                    if (document.getFileLength() > Constants.MAX_SIZE)
+                        Toast.makeText(this, "File is too large", Toast.LENGTH_SHORT).show();
+                    else {
+                        fileSize = UserUtils.getFileSize(document.getFileLength());
+                        Log.e("DBData", document.getType());
+                        Uri uploadUri = Uri.fromFile(new File(document.getPath()));
+                        docRef = storageRef.child(document.getName());
+                        docRef.putFile(uploadUri).addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+                            @SuppressWarnings("VisibleForTests")
+                            @Override
+                            public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                                double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
+                                Log.e("DB", String.valueOf(progress));
+                            }
+                        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                            @SuppressWarnings("VisibleForTests")
+                            @Override
+                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+
+                                Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                                long time = System.currentTimeMillis();
+                                assert downloadUrl != null;
+                                ChatMessage message = new ChatMessage(document.getName(), toEmail, fromEmail,
+                                        time, messageType,document.getFileLength());
+                                messageRef.child(chatKey).push().setValue(message);
+                                Log.e("DB", String.valueOf(downloadUrl));
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Toast.makeText(ChatScreen.this, "failed to upload", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                    break;
+                }
+            }
+        }
     }
 }
