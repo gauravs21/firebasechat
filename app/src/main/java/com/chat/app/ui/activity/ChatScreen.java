@@ -138,7 +138,7 @@ public class ChatScreen extends AppCompatActivity {
                 if (messageBody.length() > 0) {
                     long time = System.currentTimeMillis();
 
-                    ChatMessage message = new ChatMessage(messageBody, toEmail, fromEmail, time, Constants.MSG_TYPE.NORMAL,0);
+                    ChatMessage message = new ChatMessage(messageBody, toEmail, fromEmail, time, Constants.MSG_TYPE.NORMAL,0,null);
                     messageRef.child(chatKey).push().setValue(message);
                     etMessage.setText("");
 //                    View view = getCurrentFocus();
@@ -172,6 +172,8 @@ public class ChatScreen extends AppCompatActivity {
                         chatMessage.setMessageBody((String) messageMap.get("messageBody"));
                         chatMessage.setMessageType((String) messageMap.get("messageType"));
                         chatMessage.setTimestamp((long) messageMap.get("timestamp"));
+                        chatMessage.setFileLength((long) messageMap.get("fileLength"));
+                        chatMessage.setDownloadLink((String) messageMap.get("downloadLink"));
                         messageArrayList.add(chatMessage);
                     }
                 }
@@ -353,7 +355,7 @@ public class ChatScreen extends AppCompatActivity {
                                 long time = System.currentTimeMillis();
                                 assert downloadUrl != null;
                                 ChatMessage message = new ChatMessage(document.getName(), toEmail, fromEmail,
-                                        time, messageType,document.getFileLength());
+                                        time, messageType,document.getFileLength(),downloadUrl.toString());
                                 messageRef.child(chatKey).push().setValue(message);
                                 Log.e("DB", String.valueOf(downloadUrl));
                             }

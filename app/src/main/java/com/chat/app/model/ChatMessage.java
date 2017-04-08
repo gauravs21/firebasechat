@@ -12,16 +12,18 @@ public class ChatMessage {
     private long timestamp;
     private String messageType;
     private long fileLength;
+    private String downloadLink;
     public ChatMessage() {
     }
 
-    public ChatMessage(String messageBody, String toEmail, String fromEmail, long time, String messageType,long fileSize) {
+    public ChatMessage(String messageBody, String toEmail, String fromEmail, long time, String messageType, long fileSize, String link) {
         this.messageBody = messageBody;
         this.to = toEmail;
         this.from = fromEmail;
         this.timestamp = time;
         this.messageType = messageType;
         this.fileLength = fileSize;
+        this.downloadLink = link;
     }
 
     public String getMessageBody() {
@@ -71,5 +73,13 @@ public class ChatMessage {
 
     public void setFileLength(long fileLength) {
         this.fileLength = fileLength;
+    }
+
+    public String getDownloadLink() {
+        return downloadLink;
+    }
+
+    public void setDownloadLink(String downloadLink) {
+        this.downloadLink = downloadLink;
     }
 }

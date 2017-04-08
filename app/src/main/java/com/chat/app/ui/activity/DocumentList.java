@@ -30,20 +30,23 @@ public class DocumentList extends AppCompatActivity {
     private ArrayList<String> fileName = new ArrayList<>();
     RecyclerView recyclerView;
     ArrayList<DocumentModel> modelArrayList = new ArrayList<>();
-    String type;
-    int fileCount;
+//    String type;
+//    int fileCount;
     ProgressBar progressBar;
     TextView tvReadMessage;
 
     private File sdcardObj = new File(Environment.getExternalStorageDirectory().getAbsolutePath());
     String secStore = System.getenv("SECONDARY_STORAGE");
-    File f_secs = new File(secStore);
+
+    File f_secs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_document_list);
+        if (secStore != null)
+            f_secs = new File(secStore);
         progressBar = (ProgressBar) findViewById(R.id.read_document);
         tvReadMessage = (TextView) findViewById(R.id.tvReadMessage);
         modelArrayList.clear();
@@ -80,30 +83,33 @@ public class DocumentList extends AppCompatActivity {
             Log.e("DBAsync", "post execute");
             tvReadMessage.setText("");
             progressBar.setVisibility(View.INVISIBLE);
+            if (documentModels.size()==0)
+                tvReadMessage.setText(R.string.no_file);
             recyclerView.setAdapter(new DocumentAdapter(DocumentList.this, filelist, fileName, documentModels));
         }
     }
 
     private void listFiles(File sdcard, ArrayList<String> fileList) {
-        if (sdcard.isDirectory()) {
-            File[] files = sdcard.listFiles();
-            fileCount += files.length;
-            try {
-                for (File f : files) {
-                    if (!f.isDirectory()) {
-                        if (f.getName().endsWith(Constants.DocumentExtension.TXT)
-                                || f.getName().endsWith(Constants.DocumentExtension.PPT)
-                                || f.getName().endsWith(Constants.DocumentExtension.PPTX)
-                                || f.getName().endsWith(Constants.DocumentExtension.XLS)
-                                || f.getName().endsWith(Constants.DocumentExtension.XLSX)
-                                || f.getName().endsWith(Constants.DocumentExtension.DOC)
-                                || f.getName().endsWith(Constants.DocumentExtension.DOCX)
-                                || f.getName().endsWith(Constants.DocumentExtension.PDF)) {
-                            String extension = f.getName().substring(f.getName().lastIndexOf("."),
-                                    f.getName().length());
+        if (sdcard != null) {
+            if (sdcard.isDirectory()) {
+                File[] files = sdcard.listFiles();
+//            fileCount += files.length;
+                try {
+                    for (File f : files) {
+                        if (!f.isDirectory()) {
+                            if (f.getName().endsWith(Constants.DocumentExtension.TXT)
+                                    || f.getName().endsWith(Constants.DocumentExtension.PPT)
+                                    || f.getName().endsWith(Constants.DocumentExtension.PPTX)
+                                    || f.getName().endsWith(Constants.DocumentExtension.XLS)
+                                    || f.getName().endsWith(Constants.DocumentExtension.XLSX)
+                                    || f.getName().endsWith(Constants.DocumentExtension.DOC)
+                                    || f.getName().endsWith(Constants.DocumentExtension.DOCX)
+                                    || f.getName().endsWith(Constants.DocumentExtension.PDF)) {
+                                String extension = f.getName().substring(f.getName().lastIndexOf("."),
+                                        f.getName().length());
 
 
-                            long fileLength = f.length();
+                                long fileLength = f.length();
 
 //
 //                            if (fileSize > 1024) {
@@ -126,17 +132,19 @@ public class DocumentList extends AppCompatActivity {
 //                                Log.e("DB", f.getName() + " " + String.valueOf(fileSize) + " Bytes");
 //                            }
 
-                            modelArrayList.add(new DocumentModel(f.getAbsolutePath(), f.getName(),
-                                    extension, fileLength));
+                                modelArrayList.add(new DocumentModel(f.getAbsolutePath(), f.getName(),
+                                        extension, fileLength));
+                            }
+                        } else {
+                            listFiles(f, fileList);
                         }
-                    } else {
-                        listFiles(f, fileList);
                     }
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    //e.printStackTrace();
                 }
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                //e.printStackTrace();
             }
-        }
+        }else
+            tvReadMessage.setText(R.string.no_storage);
     }
 }

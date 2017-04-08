@@ -5,4 +5,6 @@
     <string name="upload_image">Upload Image</string>
     <string name="upload_document">Upload Document</string>
     <string name="read_documents">Reading Documents</string>
+    <string name="no_storage">No storage found!!</string>
+    <string name="no_file">No files found! :(</string>
 </resources>
