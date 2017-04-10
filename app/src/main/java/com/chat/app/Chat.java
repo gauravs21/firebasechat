@@ -1,6 +1,9 @@
 package com.chat.app;
 
 import android.app.Application;
+import android.support.multidex.MultiDex;
+
+import com.google.firebase.database.FirebaseDatabase;
 
 
 /*
@@ -11,14 +14,7 @@ public class Chat extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-
-
-
+        MultiDex.install(this);
+        FirebaseDatabase.getInstance().setPersistenceEnabled(true);
     }
-
-//    @Override
-//    protected void attachBaseContext(Context base) {
-//        super.attachBaseContext(base);
-//        MultiDex.install(this);
-//    }
 }

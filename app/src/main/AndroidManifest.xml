@@ -3,6 +3,8 @@
     package="com.chat.app">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
     <application
         android:name=".Chat"
@@ -12,7 +14,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".ui.activity.HomeActivity"></activity>
+        <activity android:name=".ui.activity.HomeActivity" />
         <activity android:name=".ui.activity.LoginScreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -20,6 +22,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".ui.activity.ChatScreen" />
+        <activity android:name=".ui.activity.DocumentList" />
+
         <!-- device token -->
         <service android:name=".fcm.FirebaseInstanceId">
             <intent-filter>
@@ -32,7 +37,6 @@
             </intent-filter>
         </service>
 
-        <activity android:name=".ui.activity.ChatScreen"></activity>
     </application>
 
 </manifest>
