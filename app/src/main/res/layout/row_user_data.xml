@@ -4,6 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_margin="8dp"
     app:cardCornerRadius="8dp"
+    android:background="@color/chat_box_send"
     android:layout_height="wrap_content">
 
     <LinearLayout
@@ -12,7 +13,7 @@
         android:layout_height="wrap_content">
         <TextView
 
-            android:textColor="#000fff"
+            android:textColor="@color/chat_box_received"
             android:padding="8dp"
             android:textSize="16sp"
             android:id="@+id/row_tv_email"

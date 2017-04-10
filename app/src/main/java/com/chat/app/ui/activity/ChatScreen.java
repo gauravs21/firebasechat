@@ -160,6 +160,7 @@ public class ChatScreen extends AppCompatActivity {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Map<String, Object> chatMap;
                 messageArrayList.clear();
+                Log.e("DBcount", String.valueOf(dataSnapshot.getChildrenCount()));
                 for (DataSnapshot da : dataSnapshot.getChildren()) {
                     if (da.getValue() instanceof Map) {
                         chatMap = (HashMap<String, Object>)

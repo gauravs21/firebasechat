@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0ffff0"
+    android:background="@color/chat_box_received"
     tools:context="com.chat.app.ui.activity.HomeActivity">
 
     <TextView
