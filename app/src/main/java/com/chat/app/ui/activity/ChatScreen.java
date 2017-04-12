@@ -42,14 +42,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ChatScreen extends AppCompatActivity {
-
+    long startnow, endnow;
+    public static final String TAG = "DB";
     public static final String EMAIL = "email";
+    public static final String USER_ID = "user_id";
     public static final String FILE = "file";
     DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
     DatabaseReference messageRef = reference.child("chats");
+    DatabaseReference conversation = reference.child("conversationRecord");
     DatabaseReference newChat = messageRef.push();
     StorageReference docRef;
-    String toEmail, fromEmail, fileSize, chatKey;
+    String toEmail, fromEmail, fileSize, chatKey, toUserId, fromuserId;
     boolean newUser = true;
     FrameLayout frameLayout;
     EditText etMessage;
@@ -72,55 +75,53 @@ public class ChatScreen extends AppCompatActivity {
         adapter = new MessageAdapter(ChatScreen.this, messageArrayList);
         rvMessage.setAdapter(adapter);
         toEmail = getIntent().getStringExtra(EMAIL);
+        toUserId = getIntent().getStringExtra(USER_ID);
+        fromuserId = PrefsUtil.getUserId(this);
         fromEmail = PrefsUtil.getEmail(this);
-        Log.e("DB", toEmail);
-        //create thread
-        messageRef.addListenerForSingleValueEvent(new ValueEventListener() {
+        Log.e("DB", fromuserId);
+
+        chatKey = newChat.getKey();
+        conversation.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
+//                Log.e(TAG, String.valueOf(dataSnapshot));
+
+                startnow = android.os.SystemClock.uptimeMillis();
                 //check if chat is already created and stop user creating new thread every time
                 if (dataSnapshot.getValue() != null) {
-                    for (DataSnapshot d :
-                            dataSnapshot.getChildren()) {
-                        //chat created by other user
-                        if (d.child("from").getValue().equals(toEmail)
-                                && d.child("to").getValue().equals(fromEmail)) {
-                            Log.e("DBC12", "other created");
-                            chatKey = d.getKey();
-                            chatListener(chatKey);
-                            newUser = false;
-                            break;
-                        }
-                        //chat created by you
-                        else if (d.child("to").getValue().equals(toEmail)
-                                && d.child("from").getValue().equals(fromEmail)) {
-                            Log.e("DBC12", "you created");
-                            chatKey = d.getKey();
-                            chatListener(chatKey);
-                            newUser = false;
-                            break;
-                        }
-                    }
+                    chatKey = String.valueOf(dataSnapshot.child(fromuserId).child("conversation").child(toUserId).getValue());
+                    Log.e(TAG, chatKey);
+//                    Log.e(TAG, String.valueOf(dataSnapshot.child(fromuserId).child(String.valueOf(conversation))));
+//                    for (DataSnapshot d :
+//                            dataSnapshot.getChildren()) {
+                    //chat created by other user
+//                        chatKey= String.valueOf(d.child("conversation"));
+//                        Log.e(TAG,chatKey);
+//                        if (d.child("from").getValue().equals(toEmail)
+//                                && d.child("to").getValue().equals(fromEmail)) {
+//                            Log.e("DBC12", "other created");
+//                            chatKey = d.getKey();
+//                            chatListener(chatKey);
+//                            newUser = false;
+//                            break;
+//                        }
+//                        //chat created by you
+//                        else if (d.child("to").getValue().equals(toEmail)
+//                                && d.child("from").getValue().equals(fromEmail)) {
+//                            Log.e("DBC12", "you created");
+//                            endnow= android.os.SystemClock.uptimeMillis();
+//                            chatKey = d.getKey();
+//                            chatListener(chatKey);
+//                            newUser = false;
+//                            break;
+//                        }
+                } else {
 
-                }
-                //create new thread
-                if (newUser) {
-                    Log.e("DBC12", "new chat created");
-                    newChat.child("to").setValue(toEmail);
-                    newChat.child("from").setValue(PrefsUtil.getEmail(ChatScreen.this));
-                    newChat.addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            chatKey = dataSnapshot.getKey();
-                            Log.e("DB", chatKey);
-                            chatListener(chatKey);
-                        }
+//                }
 
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
 
-                        }
-                    });
+                    conversation.child(fromuserId).child("conversation").child(toUserId).setValue(chatKey);
+                    conversation.child(toUserId).child("conversation").child(fromuserId).setValue(chatKey);
                 }
             }
 
@@ -129,8 +130,82 @@ public class ChatScreen extends AppCompatActivity {
 
             }
         });
+        //create thread
+//        messageRef.addListenerForSingleValueEvent(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(DataSnapshot dataSnapshot) {
+//
+//                startnow = android.os.SystemClock.uptimeMillis();
+//                //check if chat is already created and stop user creating new thread every time
+//                if (dataSnapshot.getValue() != null) {
+//                    for (DataSnapshot d :
+//                            dataSnapshot.getChildren()) {
+//                        //chat created by other user
+//                        if (d.child("from").getValue().equals(toEmail)
+//                                && d.child("to").getValue().equals(fromEmail)) {
+//                            Log.e("DBC12", "other created");
+//                            chatKey = d.getKey();
+//                            chatListener(chatKey);
+//                            newUser = false;
+//                            break;
+//                        }
+//                        //chat created by you
+//                        else if (d.child("to").getValue().equals(toEmail)
+//                                && d.child("from").getValue().equals(fromEmail)) {
+//                            Log.e("DBC12", "you created");
+//                            endnow= android.os.SystemClock.uptimeMillis();
+//                            chatKey = d.getKey();
+//                            chatListener(chatKey);
+//                            newUser = false;
+//                            break;
+//                        }
+//                    }
+//
+//                }
+//                //create new thread
+//                if (newUser) {
+//                    Log.e("DBC12", "new chat created");
+//                    newChat.child("to").setValue(toEmail);
+//                    newChat.child("from").setValue(PrefsUtil.getEmail(ChatScreen.this));
+//                    newChat.addListenerForSingleValueEvent(new ValueEventListener() {
+//                        @Override
+//                        public void onDataChange(DataSnapshot dataSnapshot) {
+//                            chatKey = dataSnapshot.getKey();
+//                            endnow= android.os.SystemClock.uptimeMillis();
+//                            Log.e("DB", chatKey);
+//                            chatListener(chatKey);
+//                        }
+//
+//                        @Override
+//                        public void onCancelled(DatabaseError databaseError) {
+//
+//                        }
+//                    });
+//                }
+//
+//                Log.e("DB",startnow + " end "+endnow);
+//            }
+//
+//            @Override
+//            public void onCancelled(DatabaseError databaseError) {
+//
+//            }
+//        });
 
         //add message
+
+        conversation.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
         frameLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -138,7 +213,7 @@ public class ChatScreen extends AppCompatActivity {
                 if (messageBody.length() > 0) {
                     long time = System.currentTimeMillis();
 
-                    ChatMessage message = new ChatMessage(messageBody, toEmail, fromEmail, time, Constants.MSG_TYPE.NORMAL,0,null);
+                    ChatMessage message = new ChatMessage(messageBody, toEmail, fromEmail, time, Constants.MSG_TYPE.NORMAL, 0, null);
                     messageRef.child(chatKey).push().setValue(message);
                     etMessage.setText("");
 //                    View view = getCurrentFocus();
@@ -356,7 +431,7 @@ public class ChatScreen extends AppCompatActivity {
                                 long time = System.currentTimeMillis();
                                 assert downloadUrl != null;
                                 ChatMessage message = new ChatMessage(document.getName(), toEmail, fromEmail,
-                                        time, messageType,document.getFileLength(),downloadUrl.toString());
+                                        time, messageType, document.getFileLength(), downloadUrl.toString());
                                 messageRef.child(chatKey).push().setValue(message);
                                 Log.e("DB", String.valueOf(downloadUrl));
                             }
