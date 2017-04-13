@@ -31,6 +31,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Locale;
 
 /*
@@ -63,9 +64,21 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
     @Override
     public void onBindViewHolder(MessageHolder holder, int position) {
         final float SCALE = context.getResources().getDisplayMetrics().density;
-
         final ChatMessage chatMessage = chatMessages.get(position);
-//        Log.e("DB", chatMessage.getFrom() + " " + chatMessage.getMessageBody() + " " + PrefsUtil.getEmail(context));
+
+        long currentChatTimestamp = chatMessage.getTimestamp();
+        Date currDate=new Date(currentChatTimestamp);
+        Date previousDate=new Date(0);
+        if (position != 0) {
+            long previousChatTimestamp=chatMessages.get(holder.getAdapterPosition()-1).getTimestamp();
+            previousDate =new Date(previousChatTimestamp);
+        }
+
+        String printableDate = UserUtils.getPrintableDate(currDate, previousDate);
+        if (!printableDate.isEmpty()) {
+            holder.linearLayout.setVisibility(View.VISIBLE);
+            holder.tvChatDate.setText(printableDate);
+        }
 
         LinearLayout.LayoutParams relativeParams =
                 (LinearLayout.LayoutParams) holder.relativeLayoutParent.getLayoutParams();
@@ -101,43 +114,45 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
             holder.relativeLayout.setVisibility(View.GONE);
         } else {
 
-            Log.e("DB","in else");
+            holder.relativeLayout.setVisibility(View.VISIBLE);
+            Log.e("DB", "in else");
             switch (chatMessage.getMessageType()) {
 
                 case Constants.MSG_TYPE.TEXT:
 //                    holder.ivCoverImage.setBackgroundResource(R.drawable.txt);
-                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context,R.drawable.txt));
+                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context, R.drawable.txt));
 
                     break;
                 case Constants.MSG_TYPE.PPT:
 //                    holder.ivCoverImage.setBackgroundResource(R.drawable.ppt);
-                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context,R.drawable.ppt));
+                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context, R.drawable.ppt));
 
-                    Log.e("DB","in ppt");
+                    Log.e("DB", "in ppt");
                     break;
 //                case Constants.DocumentExtension.PPTX:
 //                    holder.ivCoverImage.setBackgroundResource(R.drawable.ppt);
 //                    break;
                 case Constants.MSG_TYPE.EXCEL_SHEET:
 //                    holder.ivCoverImage.setBackground(R.drawable.xls);
-                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context,R.drawable.xls));
+                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context, R.drawable.xls));
                     break;
 //                case Constants.DocumentExtension.XLSX:
 //                    holder.ivCoverImage.setBackgroundResource(R.drawable.xls);
 //                    break;
                 case Constants.MSG_TYPE.DOC:
 //                    holder.ivCoverImage.setBackgroundResource(R.drawable.doc);
-                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context,R.drawable.doc));
+                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context, R.drawable.doc));
 
                     break;
 //                case Constants.DocumentExtension.DOCX:
 //                    holder.ivCoverImage.setBackgroundResource(R.drawable.doc);
 //                    break;
                 case Constants.MSG_TYPE.PDF:
-                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context,R.drawable.pdf));
+                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context, R.drawable.pdf));
 
                     break;
-                default:Log.e("DB","in switch");
+                default:
+                    Log.e("DB", "in switch");
             }
 
 
@@ -185,25 +200,33 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
     }
 
     class MessageHolder extends RecyclerView.ViewHolder {
-        TextView tvFrom, tvMessageBody, tvChatTime, tvFileName, tvFileSize;
-        RelativeLayout relativeLayout, relativeLayoutParent;
+        TextView tvFrom, tvMessageBody, tvChatTime, tvFileName, tvFileSize,tvChatDate;
+        RelativeLayout relativeLayout ;
+        LinearLayout linearLayout,relativeLayoutParent;
         ImageView ivDownload, ivCoverImage;
 
         MessageHolder(View itemView) {
             super(itemView);
             tvFrom = (TextView) itemView.findViewById(R.id.tvFrom);
             tvMessageBody = (TextView) itemView.findViewById(R.id.tvMsgBody);
-            relativeLayoutParent = (RelativeLayout) itemView.findViewById(R.id.rl_parent);
+            relativeLayoutParent = (LinearLayout) itemView.findViewById(R.id.rl_parent);
             int width = context.getResources().getDisplayMetrics().widthPixels;
             tvMessageBody.setMaxWidth((int) (width * 0.8));
             tvChatTime = (TextView) itemView.findViewById(R.id.tvChatTime);
             relativeLayout = (RelativeLayout) itemView.findViewById(R.id.rl_document);
             tvFileName = (TextView) itemView.findViewById(R.id.tv_doc_title);
+            tvFileName.setMaxWidth((int) (width*0.8));
             tvFileSize = (TextView) itemView.findViewById(R.id.tv_doc_size);
             ivDownload = (ImageView) itemView.findViewById(R.id.iv_download);
             ivCoverImage = (ImageView) itemView.findViewById(R.id.iv_cover_type);
             tvFileName.setMaxWidth((int) (width * 0.8));
+//            relativeLayout.getLayoutParams().width= (int) (width*0.8);
+//            RelativeLayout.LayoutParams rel_btn = new RelativeLayout.LayoutParams(
+//                    ((int) (width * 0.8)) ,ViewGroup.LayoutParams.WRAP_CONTENT );
+//            relativeLayout.setLayoutParams(rel_btn);
 
+            tvChatDate = (TextView) itemView.findViewById(R.id.bubble_chat_day);
+            linearLayout = (LinearLayout) itemView.findViewById(R.id.ll_date_layout);
         }
     }
 

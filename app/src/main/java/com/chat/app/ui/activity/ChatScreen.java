@@ -19,12 +19,15 @@ import android.widget.Toast;
 import com.chat.app.R;
 import com.chat.app.model.ChatMessage;
 import com.chat.app.model.DocumentModel;
+import com.chat.app.model.User;
 import com.chat.app.ui.adapter.MessageAdapter;
 import com.chat.app.utility.Constants;
 import com.chat.app.utility.PrefsUtil;
 import com.chat.app.utility.UserUtils;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -52,7 +55,7 @@ public class ChatScreen extends AppCompatActivity {
     DatabaseReference conversation = reference.child("conversationRecord");
     DatabaseReference newChat = messageRef.push();
     StorageReference docRef;
-    String toEmail, fromEmail, fileSize, chatKey, toUserId, fromuserId;
+    String toEmail, fromEmail, fileSize, chatKey, newThreadKey, toUserId, fromuserId;
     boolean newUser = true;
     FrameLayout frameLayout;
     EditText etMessage;
@@ -80,49 +83,40 @@ public class ChatScreen extends AppCompatActivity {
         fromEmail = PrefsUtil.getEmail(this);
         Log.e("DB", fromuserId);
 
-        chatKey = newChat.getKey();
+        newThreadKey = newChat.getKey();
+        //create thread
         conversation.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
 //                Log.e(TAG, String.valueOf(dataSnapshot));
 
                 startnow = android.os.SystemClock.uptimeMillis();
-                //check if chat is already created and stop user creating new thread every time
+                //check if user has chat history
                 if (dataSnapshot.getValue() != null) {
+                    //check if chat is already created and stop user creating new thread every time
                     chatKey = String.valueOf(dataSnapshot.child(fromuserId).child("conversation").child(toUserId).getValue());
-                    Log.e(TAG, chatKey);
-//                    Log.e(TAG, String.valueOf(dataSnapshot.child(fromuserId).child(String.valueOf(conversation))));
-//                    for (DataSnapshot d :
-//                            dataSnapshot.getChildren()) {
-                    //chat created by other user
-//                        chatKey= String.valueOf(d.child("conversation"));
-//                        Log.e(TAG,chatKey);
-//                        if (d.child("from").getValue().equals(toEmail)
-//                                && d.child("to").getValue().equals(fromEmail)) {
-//                            Log.e("DBC12", "other created");
-//                            chatKey = d.getKey();
-//                            chatListener(chatKey);
-//                            newUser = false;
-//                            break;
-//                        }
-//                        //chat created by you
-//                        else if (d.child("to").getValue().equals(toEmail)
-//                                && d.child("from").getValue().equals(fromEmail)) {
-//                            Log.e("DBC12", "you created");
-//                            endnow= android.os.SystemClock.uptimeMillis();
-//                            chatKey = d.getKey();
-//                            chatListener(chatKey);
-//                            newUser = false;
-//                            break;
-//                        }
+                    Log.e(TAG + " chat0", chatKey);
+
+                    //if chat is for first time between users
+                    if (UserUtils.isNull(chatKey)) {
+                        conversation.child(fromuserId).child("conversation").child(toUserId).setValue(newThreadKey);
+                        conversation.child(toUserId).child("conversation").child(fromuserId).setValue(newThreadKey);
+                        Log.e(TAG + " chat1", chatKey);
+
+                        chatListener(newThreadKey);
+                    } else {
+                        Log.e(TAG + " chat2", chatKey);
+                        chatListener(chatKey);
+                    }
+
                 } else {
-
-//                }
-
-
-                    conversation.child(fromuserId).child("conversation").child(toUserId).setValue(chatKey);
-                    conversation.child(toUserId).child("conversation").child(fromuserId).setValue(chatKey);
+                    Log.e(TAG + " chat3", chatKey);
+                    conversation.child(fromuserId).child("conversation").child(toUserId).setValue(newThreadKey);
+                    conversation.child(toUserId).child("conversation").child(fromuserId).setValue(newThreadKey);
+                    chatListener(newThreadKey);
                 }
+                endnow = android.os.SystemClock.uptimeMillis();
+                Log.e("DB", startnow + " end " + endnow);
             }
 
             @Override
@@ -194,17 +188,6 @@ public class ChatScreen extends AppCompatActivity {
 
         //add message
 
-        conversation.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
 
         frameLayout.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -214,7 +197,12 @@ public class ChatScreen extends AppCompatActivity {
                     long time = System.currentTimeMillis();
 
                     ChatMessage message = new ChatMessage(messageBody, toEmail, fromEmail, time, Constants.MSG_TYPE.NORMAL, 0, null);
-                    messageRef.child(chatKey).push().setValue(message);
+                    messageRef.child(chatKey).push().setValue(message).addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            Log.e(TAG, "completed");
+                        }
+                    });
                     etMessage.setText("");
 //                    View view = getCurrentFocus();
 //                    if (view != null) {
@@ -280,72 +268,6 @@ public class ChatScreen extends AppCompatActivity {
 
             }
         });
-
-//        query.addChildEventListener(new ChildEventListener() {
-//            @SuppressWarnings("unchecked")
-//            @Override
-//            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-//                Map<String, Object> chatMap;
-//                Log.e("DBC", String.valueOf(dataSnapshot.getChildrenCount()));
-//                for (DataSnapshot da : dataSnapshot.getChildren()) {
-//                    Log.e("DBC", String.valueOf(da));
-//                    Log.e("DBCFrom", String.valueOf(da.child("from").getValue()));
-//                    if (da.getValue() instanceof Map) {
-//                        chatMap = (HashMap<String, Object>)
-//                                da.getValue();
-//                        Log.e("DBC", String.valueOf(chatMap));
-//                        Map<String, Object> messageMap = chatMap;
-//                        ChatMessage chatMessage = new ChatMessage();
-//                        chatMessage.setFrom((String) messageMap.get("from"));
-//                        chatMessage.setTo((String) messageMap.get("to"));
-//                        chatMessage.setMessageBody((String) messageMap.get("messageBody"));
-//                        chatMessage.setTimestamp((long) messageMap.get("timestamp"));
-//                        messageArrayList.add(chatMessage);
-//                    }
-////
-////
-////                Map<String, Object> chatMap = (HashMap<String, Object>)
-////                        dataSnapshot.getValue();
-////
-////                for (Object ob : chatMap.values()) {
-////
-////                    if (ob instanceof Map) {
-////                        Map<String, Object> messageMap = (Map<String, Object>) ob;
-////                        ChatMessage chatMessage = new ChatMessage();
-////                        chatMessage.setFrom((String) messageMap.get("from"));
-////                        chatMessage.setTo((String) messageMap.get("to"));
-////                        chatMessage.setMessageBody((String) messageMap.get("messageBody"));
-////                        chatMessage.setTimestamp((long) messageMap.get("timestamp"));
-////                        Log.e("DB", (String) messageMap.get("messageBody"));
-////                        messageArrayList.add(chatMessage);
-////                    }
-//
-//                    adapter.notifyItemInserted(messageArrayList.size());
-//                    adapter.notifyDataSetChanged();
-//                    rvMessage.scrollToPosition(rvMessage.getAdapter().getItemCount() - 1);
-//                }
-//            }
-//
-//            @Override
-//            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-//
-//            }
-//
-//            @Override
-//            public void onChildRemoved(DataSnapshot dataSnapshot) {
-//
-//            }
-//
-//            @Override
-//            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-//
-//            }
-//
-//            @Override
-//            public void onCancelled(DatabaseError databaseError) {
-//
-//            }
-//        });
     }
 
     @Override

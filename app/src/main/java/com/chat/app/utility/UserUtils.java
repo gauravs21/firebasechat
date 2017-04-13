@@ -1,6 +1,12 @@
 package com.chat.app.utility;
 
+import android.util.Log;
+
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 /*
  * Created by kopite on 5/4/17.
@@ -26,7 +32,40 @@ public class UserUtils {
             }
 
         } else {
-            return String.valueOf((long)fileSize) + " Bytes";
+            return String.valueOf((long) fileSize) + " Bytes";
         }
+    }
+
+    public static boolean isNull(String text) {
+        return text == null || text.trim().equalsIgnoreCase("null");
+    }
+
+    public static String getPrintableDate(Date currDate, Date prevDate) {
+        String time = "";
+        boolean printDate = false;
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM d, yyyy", Locale.US);
+        String currentDate = sdf.format(currDate);
+        String previous = sdf.format(prevDate);
+
+        if (!currentDate.equals(previous))
+            printDate = true;
+
+        if (printDate) {
+            long currentTime = System.currentTimeMillis();
+            Date date = new Date(currentTime);
+            String today = sdf.format(date);
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.DATE,-1);
+            String yesterday = sdf.format(cal.getTimeInMillis());
+            Log.e("DB", yesterday);
+            if (currentDate.equalsIgnoreCase(today))
+                time = "Today";
+            else if (currentDate.equals(yesterday))
+                time = "Yesterday";
+            else
+                time = currentDate;
+        }
+
+        return time;
     }
 }
