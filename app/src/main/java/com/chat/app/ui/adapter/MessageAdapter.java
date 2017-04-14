@@ -67,11 +67,12 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
         final ChatMessage chatMessage = chatMessages.get(position);
 
         long currentChatTimestamp = chatMessage.getTimestamp();
-        Date currDate=new Date(currentChatTimestamp);
-        Date previousDate=new Date(0);
+        Date currDate = new Date(currentChatTimestamp);
+        Date previousDate = new Date(0);
         if (position != 0) {
-            long previousChatTimestamp=chatMessages.get(holder.getAdapterPosition()-1).getTimestamp();
-            previousDate =new Date(previousChatTimestamp);
+            long previousChatTimestamp = chatMessages.get(holder.getAdapterPosition() - 1).getTimestamp();
+            previousDate = new Date(previousChatTimestamp);
+            Log.e("DB12", String.valueOf(previousChatTimestamp));
         }
 
         String printableDate = UserUtils.getPrintableDate(currDate, previousDate);
@@ -79,6 +80,10 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
             holder.linearLayout.setVisibility(View.VISIBLE);
             holder.tvChatDate.setText(printableDate);
         }
+        else {
+            holder.linearLayout.setVisibility(View.GONE);
+        }
+
 
         LinearLayout.LayoutParams relativeParams =
                 (LinearLayout.LayoutParams) holder.relativeLayoutParent.getLayoutParams();
@@ -93,6 +98,12 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
             holder.tvChatTime.setTextColor(ContextCompat.getColor(context, R.color.chat_box_received));
             holder.tvFileName.setTextColor(ContextCompat.getColor(context, R.color.chat_box_send));
             holder.tvFileSize.setTextColor(ContextCompat.getColor(context, R.color.chat_box_send));
+            Log.e("DB", String.valueOf(chatMessage.getMessageStatus()));
+            if(chatMessage.getMessageStatus()==1){
+                holder.ivStatus.setBackground(ContextCompat.getDrawable(context, R.drawable.ic_check_black_18dp));
+            }
+            else
+                holder.ivStatus.setBackground(ContextCompat.getDrawable(context, R.drawable.ic_access_time_black_18dp));
 
         } else {
             relativeParams.setMargins((int) (16 * SCALE + 0.5f), 0, (int) (4 * SCALE + 0.5f), 0);  // left, top, right, bottom
@@ -200,22 +211,22 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
     }
 
     class MessageHolder extends RecyclerView.ViewHolder {
-        TextView tvFrom, tvMessageBody, tvChatTime, tvFileName, tvFileSize,tvChatDate;
-        RelativeLayout relativeLayout ;
-        LinearLayout linearLayout,relativeLayoutParent;
-        ImageView ivDownload, ivCoverImage;
+        TextView tvFrom, tvMessageBody, tvChatTime, tvFileName, tvFileSize, tvChatDate;
+        RelativeLayout relativeLayout, relativeLayoutParent;
+        LinearLayout linearLayout;
+        ImageView ivDownload, ivCoverImage, ivStatus;
 
         MessageHolder(View itemView) {
             super(itemView);
             tvFrom = (TextView) itemView.findViewById(R.id.tvFrom);
             tvMessageBody = (TextView) itemView.findViewById(R.id.tvMsgBody);
-            relativeLayoutParent = (LinearLayout) itemView.findViewById(R.id.rl_parent);
+            relativeLayoutParent = (RelativeLayout) itemView.findViewById(R.id.rl_parent);
             int width = context.getResources().getDisplayMetrics().widthPixels;
             tvMessageBody.setMaxWidth((int) (width * 0.8));
             tvChatTime = (TextView) itemView.findViewById(R.id.tvChatTime);
             relativeLayout = (RelativeLayout) itemView.findViewById(R.id.rl_document);
             tvFileName = (TextView) itemView.findViewById(R.id.tv_doc_title);
-            tvFileName.setMaxWidth((int) (width*0.8));
+            tvFileName.setMaxWidth((int) (width * 0.8));
             tvFileSize = (TextView) itemView.findViewById(R.id.tv_doc_size);
             ivDownload = (ImageView) itemView.findViewById(R.id.iv_download);
             ivCoverImage = (ImageView) itemView.findViewById(R.id.iv_cover_type);
@@ -227,6 +238,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
 
             tvChatDate = (TextView) itemView.findViewById(R.id.bubble_chat_day);
             linearLayout = (LinearLayout) itemView.findViewById(R.id.ll_date_layout);
+            ivStatus = (ImageView) itemView.findViewById(R.id.iv_message_status);
         }
     }
 

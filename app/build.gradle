@@ -11,11 +11,22 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+//        ndk {
+//            abiFilters 'armeabi-v7a', 'arm64-v8a', 'mips', 'x86', 'x86_64'
+//        }
     }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'armeabi-v7a', 'arm64-v8a', 'mips', 'x86', 'x86_64'
         }
     }
 }
@@ -39,5 +50,5 @@ dependencies {
     compile 'org.apache.commons:commons-lang3:3.5'
     testCompile 'junit:junit:4.12'
 }
-
+apply plugin: 'realm-android'
 apply plugin: 'com.google.gms.google-services'

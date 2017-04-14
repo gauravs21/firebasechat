@@ -13,10 +13,11 @@ public class ChatMessage {
     private String messageType;
     private long fileLength;
     private String downloadLink;
+    private long messageStatus;
     public ChatMessage() {
     }
 
-    public ChatMessage(String messageBody, String toEmail, String fromEmail, long time, String messageType, long fileSize, String link) {
+    public ChatMessage(String messageBody, String toEmail, String fromEmail, long time, String messageType, long fileSize, String link, long messageStatus) {
         this.messageBody = messageBody;
         this.to = toEmail;
         this.from = fromEmail;
@@ -24,6 +25,7 @@ public class ChatMessage {
         this.messageType = messageType;
         this.fileLength = fileSize;
         this.downloadLink = link;
+        this.messageStatus = messageStatus;
     }
 
     public String getMessageBody() {
@@ -81,5 +83,13 @@ public class ChatMessage {
 
     public void setDownloadLink(String downloadLink) {
         this.downloadLink = downloadLink;
+    }
+
+    public long getMessageStatus() {
+        return messageStatus;
+    }
+
+    public void setMessageStatus(long messageStatus) {
+        this.messageStatus = messageStatus;
     }
 }

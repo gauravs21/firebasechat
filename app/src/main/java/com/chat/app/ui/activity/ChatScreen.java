@@ -8,6 +8,8 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -56,7 +58,7 @@ public class ChatScreen extends AppCompatActivity {
     DatabaseReference newChat = messageRef.push();
     StorageReference docRef;
     String toEmail, fromEmail, fileSize, chatKey, newThreadKey, toUserId, fromuserId;
-    boolean newUser = true;
+    public static boolean IS_TYPING = false;
     FrameLayout frameLayout;
     EditText etMessage;
     RecyclerView rvMessage;
@@ -192,15 +194,23 @@ public class ChatScreen extends AppCompatActivity {
         frameLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String messageBody = etMessage.getText().toString().trim();
+                final String messageBody = etMessage.getText().toString().trim();
                 if (messageBody.length() > 0) {
                     long time = System.currentTimeMillis();
 
-                    ChatMessage message = new ChatMessage(messageBody, toEmail, fromEmail, time, Constants.MSG_TYPE.NORMAL, 0, null);
-                    messageRef.child(chatKey).push().setValue(message).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    long messageStatus = 0;
+                    int fileSize = 0;
+                    final ChatMessage message = new ChatMessage(messageBody, toEmail, fromEmail,
+                            time, Constants.MSG_TYPE.NORMAL, fileSize, null, messageStatus);
+                    final String messageKey = messageRef.child(chatKey).child("messages").push().getKey();
+
+                    messageRef.child(chatKey).child("messages").child(messageKey).setValue(message).addOnCompleteListener(new OnCompleteListener<Void>() {
                         @Override
                         public void onComplete(@NonNull Task<Void> task) {
                             Log.e(TAG, "completed");
+                            messageRef.child(chatKey).child("messages").child(messageKey).child("messageStatus").setValue(1);
+                            Log.e(TAG, messageRef.child(chatKey).getKey());
+
                         }
                     });
                     etMessage.setText("");
@@ -212,11 +222,55 @@ public class ChatScreen extends AppCompatActivity {
                 }
             }
         });
+
+        //textwatcher for typing indicator
+        etMessage.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                String message = etMessage.getText().toString().trim();
+                if (message.length() == 0) {
+                    IS_TYPING = false;
+                    sendTypingStatus(IS_TYPING);
+//                    handleTextEmpty();
+                } else {
+//                    handleTextNotEmpty();
+                    IS_TYPING = true;
+                    sendTypingStatus(IS_TYPING);
+                }
+            }
+        });
+    }
+
+    //adding typing Indicator to firebase message thread
+    private void sendTypingStatus(boolean isTyping) {
+        if (isTyping) {
+//            String user_id = String.valueOf(currentUser.getId());
+            messageRef.child(chatKey).child("typingIndicator").child(fromuserId).setValue(true);
+//            firebaseTypingStatus = Constants.getFirebaseTypingIndicatior(chatRequestFirebaseThreadId, user_id);
+//            firebaseTypingStatus.setValue(IS_TYPING);
+//            getStatus();
+        } else {
+            messageRef.child(chatKey).child("typingIndicator").child(fromuserId).setValue(false);
+//            String user_id = String.valueOf(currentUser.getId());
+//            firebaseTypingStatus = Constants.getFirebaseTypingIndicatior(chatRequestFirebaseThreadId, user_id);
+//            firebaseTypingStatus.setValue(IS_TYPING);
+//            getStatus();
+        }
     }
 
     private void chatListener(final String chatKey) {
 
-        Query query = messageRef.child(chatKey).orderByChild("timestamp");
+        Query query = messageRef.child(chatKey).child("messages").orderByChild("timestamp");
         query.addValueEventListener(new ValueEventListener() {
             @SuppressWarnings("unchecked")
             @Override
@@ -224,11 +278,20 @@ public class ChatScreen extends AppCompatActivity {
                 Map<String, Object> chatMap;
                 messageArrayList.clear();
                 Log.e("DBcount", String.valueOf(dataSnapshot.getChildrenCount()));
+
+//                Map<String, Object> chat = (HashMap<String, Object>)
+//                        dataSnapshot.getValue();
+//                for (Object ob : chat.values()) {
+////
+//                    if (ob instanceof Map) {
+//
+//                        Map<String, Object> messageMap = (Map<String, Object>) ob;
+//                        ChatMessage chatMessage = new ChatMessage();
                 for (DataSnapshot da : dataSnapshot.getChildren()) {
                     if (da.getValue() instanceof Map) {
                         chatMap = (HashMap<String, Object>)
                                 da.getValue();
-//                        Log.e("DBC", String.valueOf(chatMap));
+                        Log.e("DBC", String.valueOf(chatMap));
                         Map<String, Object> messageMap = chatMap;
                         ChatMessage chatMessage = new ChatMessage();
                         chatMessage.setFrom((String) messageMap.get("from"));
@@ -238,6 +301,7 @@ public class ChatScreen extends AppCompatActivity {
                         chatMessage.setTimestamp((long) messageMap.get("timestamp"));
                         chatMessage.setFileLength((long) messageMap.get("fileLength"));
                         chatMessage.setDownloadLink((String) messageMap.get("downloadLink"));
+                        chatMessage.setMessageStatus((long) messageMap.get("messageStatus"));
                         messageArrayList.add(chatMessage);
                     }
                 }
@@ -352,9 +416,18 @@ public class ChatScreen extends AppCompatActivity {
                                 Uri downloadUrl = taskSnapshot.getDownloadUrl();
                                 long time = System.currentTimeMillis();
                                 assert downloadUrl != null;
+                                long messageStatus = 1;
+                                final String messageKey = messageRef.child(chatKey).child("messages").push().getKey();
+
                                 ChatMessage message = new ChatMessage(document.getName(), toEmail, fromEmail,
-                                        time, messageType, document.getFileLength(), downloadUrl.toString());
-                                messageRef.child(chatKey).push().setValue(message);
+                                        time, messageType, document.getFileLength(), downloadUrl.toString(), messageStatus);
+                                messageRef.child(chatKey).child("messages").child(messageKey).setValue(message)
+                                        .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<Void> task) {
+                                                messageRef.child(chatKey).child("messages").child(messageKey).child("messageStatus").setValue(1);
+                                            }
+                                        });
                                 Log.e("DB", String.valueOf(downloadUrl));
                             }
                         }).addOnFailureListener(new OnFailureListener() {
