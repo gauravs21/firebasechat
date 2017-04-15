@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -16,6 +17,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.chat.app.R;
@@ -61,16 +63,27 @@ public class ChatScreen extends AppCompatActivity {
     public static boolean IS_TYPING = false;
     FrameLayout frameLayout;
     EditText etMessage;
+    TextView tvName,tvStatus;
     RecyclerView rvMessage;
     RecyclerView.Adapter adapter;
     ArrayList<ChatMessage> messageArrayList = new ArrayList<>();
     StorageReference storageRef = FirebaseStorage.getInstance().getReference();
     String messageType;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat_screen);
+        ActionBar actionBar=getSupportActionBar();
+        toEmail = getIntent().getStringExtra(EMAIL);
+        toUserId = getIntent().getStringExtra(USER_ID);
+        fromuserId = PrefsUtil.getUserId(this);
+        fromEmail = PrefsUtil.getEmail(this);
+        if(actionBar!=null){
+            actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
+            actionBar.setCustomView(R.layout.custom_actionbar);
+        }
         frameLayout = (FrameLayout) findViewById(R.id.frag_chat_fl_send);
         etMessage = (EditText) findViewById(R.id.frag_chat_et_input);
         rvMessage = (RecyclerView) findViewById(R.id.rvMessages);
@@ -112,7 +125,7 @@ public class ChatScreen extends AppCompatActivity {
                     }
 
                 } else {
-                    Log.e(TAG + " chat3", chatKey);
+//                    Log.e(TAG + " chat3", chatKey);
                     conversation.child(fromuserId).child("conversation").child(toUserId).setValue(newThreadKey);
                     conversation.child(toUserId).child("conversation").child(fromuserId).setValue(newThreadKey);
                     chatListener(newThreadKey);
@@ -254,17 +267,9 @@ public class ChatScreen extends AppCompatActivity {
     //adding typing Indicator to firebase message thread
     private void sendTypingStatus(boolean isTyping) {
         if (isTyping) {
-//            String user_id = String.valueOf(currentUser.getId());
             messageRef.child(chatKey).child("typingIndicator").child(fromuserId).setValue(true);
-//            firebaseTypingStatus = Constants.getFirebaseTypingIndicatior(chatRequestFirebaseThreadId, user_id);
-//            firebaseTypingStatus.setValue(IS_TYPING);
-//            getStatus();
         } else {
             messageRef.child(chatKey).child("typingIndicator").child(fromuserId).setValue(false);
-//            String user_id = String.valueOf(currentUser.getId());
-//            firebaseTypingStatus = Constants.getFirebaseTypingIndicatior(chatRequestFirebaseThreadId, user_id);
-//            firebaseTypingStatus.setValue(IS_TYPING);
-//            getStatus();
         }
     }
 
@@ -279,14 +284,6 @@ public class ChatScreen extends AppCompatActivity {
                 messageArrayList.clear();
                 Log.e("DBcount", String.valueOf(dataSnapshot.getChildrenCount()));
 
-//                Map<String, Object> chat = (HashMap<String, Object>)
-//                        dataSnapshot.getValue();
-//                for (Object ob : chat.values()) {
-////
-//                    if (ob instanceof Map) {
-//
-//                        Map<String, Object> messageMap = (Map<String, Object>) ob;
-//                        ChatMessage chatMessage = new ChatMessage();
                 for (DataSnapshot da : dataSnapshot.getChildren()) {
                     if (da.getValue() instanceof Map) {
                         chatMap = (HashMap<String, Object>)

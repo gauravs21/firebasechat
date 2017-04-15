@@ -102,6 +102,9 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
             if(chatMessage.getMessageStatus()==1){
                 holder.ivStatus.setBackground(ContextCompat.getDrawable(context, R.drawable.ic_check_black_18dp));
             }
+            else if(chatMessage.getMessageStatus()==2){
+                holder.ivStatus.setBackground(ContextCompat.getDrawable(context, R.drawable.ic_done_all_black_18dp));
+            }
             else
                 holder.ivStatus.setBackground(ContextCompat.getDrawable(context, R.drawable.ic_access_time_black_18dp));
 

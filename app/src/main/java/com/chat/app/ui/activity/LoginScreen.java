@@ -150,6 +150,7 @@ public class LoginScreen extends AppCompatActivity implements GoogleApiClient.On
 
                     Intent intent = new Intent(LoginScreen.this, HomeActivity.class);
                     startActivity(intent);
+
                 }
             }
         });
