@@ -7,4 +7,5 @@
     <string name="read_documents">Reading Documents</string>
     <string name="no_storage">No storage found!!</string>
     <string name="no_file">No files found! :(</string>
+    <string name="typing">typing...</string>
 </resources>

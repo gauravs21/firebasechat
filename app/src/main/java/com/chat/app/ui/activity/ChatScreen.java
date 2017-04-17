@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -20,6 +21,7 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.chat.app.Chat;
 import com.chat.app.R;
 import com.chat.app.model.ChatMessage;
 import com.chat.app.model.DocumentModel;
@@ -49,7 +51,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ChatScreen extends AppCompatActivity {
-    long startnow, endnow;
+    long startnow, endnow, userStatus;
     public static final String TAG = "DB";
     public static final String EMAIL = "email";
     public static final String USER_ID = "user_id";
@@ -59,31 +61,42 @@ public class ChatScreen extends AppCompatActivity {
     DatabaseReference conversation = reference.child("conversationRecord");
     DatabaseReference newChat = messageRef.push();
     StorageReference docRef;
+    DatabaseReference metaRef;
     String toEmail, fromEmail, fileSize, chatKey, newThreadKey, toUserId, fromuserId;
     public static boolean IS_TYPING = false;
     FrameLayout frameLayout;
     EditText etMessage;
-    TextView tvName,tvStatus;
+    TextView tvName, tvStatus, tvIndicator;
     RecyclerView rvMessage;
     RecyclerView.Adapter adapter;
     ArrayList<ChatMessage> messageArrayList = new ArrayList<>();
     StorageReference storageRef = FirebaseStorage.getInstance().getReference();
     String messageType;
-
+    Query query;
+    private ValueEventListener chatThreadListener, messageListener, typingListener, statusListner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_chat_screen);
-        ActionBar actionBar=getSupportActionBar();
+        ActionBar actionBar = getSupportActionBar();
         toEmail = getIntent().getStringExtra(EMAIL);
         toUserId = getIntent().getStringExtra(USER_ID);
         fromuserId = PrefsUtil.getUserId(this);
         fromEmail = PrefsUtil.getEmail(this);
-        if(actionBar!=null){
+        if (actionBar != null) {
             actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
             actionBar.setCustomView(R.layout.custom_actionbar);
+            tvName = (TextView) findViewById(R.id.custom_actionBar_tv_username);
+            tvStatus = (TextView) findViewById(R.id.actionbar_tv_status);
+            tvIndicator = (TextView) findViewById(R.id.actionbar_tv_typing);
+            tvName.setText(toEmail);
         }
+
+        metaRef = reference.child("meta")
+                .child(toUserId).child("status");
+
         frameLayout = (FrameLayout) findViewById(R.id.frag_chat_fl_send);
         etMessage = (EditText) findViewById(R.id.frag_chat_et_input);
         rvMessage = (RecyclerView) findViewById(R.id.rvMessages);
@@ -100,45 +113,9 @@ public class ChatScreen extends AppCompatActivity {
 
         newThreadKey = newChat.getKey();
         //create thread
-        conversation.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-//                Log.e(TAG, String.valueOf(dataSnapshot));
 
-                startnow = android.os.SystemClock.uptimeMillis();
-                //check if user has chat history
-                if (dataSnapshot.getValue() != null) {
-                    //check if chat is already created and stop user creating new thread every time
-                    chatKey = String.valueOf(dataSnapshot.child(fromuserId).child("conversation").child(toUserId).getValue());
-                    Log.e(TAG + " chat0", chatKey);
+//        messageThreadListener();
 
-                    //if chat is for first time between users
-                    if (UserUtils.isNull(chatKey)) {
-                        conversation.child(fromuserId).child("conversation").child(toUserId).setValue(newThreadKey);
-                        conversation.child(toUserId).child("conversation").child(fromuserId).setValue(newThreadKey);
-                        Log.e(TAG + " chat1", chatKey);
-
-                        chatListener(newThreadKey);
-                    } else {
-                        Log.e(TAG + " chat2", chatKey);
-                        chatListener(chatKey);
-                    }
-
-                } else {
-//                    Log.e(TAG + " chat3", chatKey);
-                    conversation.child(fromuserId).child("conversation").child(toUserId).setValue(newThreadKey);
-                    conversation.child(toUserId).child("conversation").child(fromuserId).setValue(newThreadKey);
-                    chatListener(newThreadKey);
-                }
-                endnow = android.os.SystemClock.uptimeMillis();
-                Log.e("DB", startnow + " end " + endnow);
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
         //create thread
 //        messageRef.addListenerForSingleValueEvent(new ValueEventListener() {
 //            @Override
@@ -249,8 +226,9 @@ public class ChatScreen extends AppCompatActivity {
             }
 
             @Override
-            public void afterTextChanged(Editable s) {
-                String message = etMessage.getText().toString().trim();
+            public void afterTextChanged(final Editable s) {
+                final String message = etMessage.getText().toString().trim();
+
                 if (message.length() == 0) {
                     IS_TYPING = false;
                     sendTypingStatus(IS_TYPING);
@@ -259,10 +237,93 @@ public class ChatScreen extends AppCompatActivity {
 //                    handleTextNotEmpty();
                     IS_TYPING = true;
                     sendTypingStatus(IS_TYPING);
+                    final Handler handler = new Handler();
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            handler.postDelayed(this, 4000);
+                            if (message.equals(s.toString())){
+                                sendTypingStatus(false);
+                            }
+
+                        }
+                    }, 4000);
                 }
+
             }
         });
+
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                handler.postDelayed(this, 60000);
+
+                String activeTime = UserUtils.convertTimeStampToLastSeen(userStatus);
+                tvStatus.setText(activeTime);
+            }
+        }, 1000);
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        messageThreadListener();
+        getStatus();
+
+
+    }
+
+    private void messageThreadListener() {
+        chatThreadListener = (new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+//                Log.e(TAG, String.valueOf(dataSnapshot));
+
+                startnow = android.os.SystemClock.uptimeMillis();
+                //check if user has chat history
+                if (dataSnapshot.getValue() != null) {
+                    //check if chat is already created and stop user creating new thread every time
+                    chatKey = String.valueOf(dataSnapshot.child(fromuserId).child("conversation").child(toUserId).getValue());
+                    Log.e(TAG + " chat0", chatKey);
+
+                    //if chat is for first time between users
+                    if (UserUtils.isNull(chatKey)) {
+                        conversation.child(fromuserId).child("conversation").child(toUserId).setValue(newThreadKey);
+                        conversation.child(toUserId).child("conversation").child(fromuserId).setValue(newThreadKey);
+                        Log.e(TAG + " chat1", chatKey);
+                        observeTyping();
+
+
+                        chatListener(newThreadKey);
+                    } else {
+                        Log.e(TAG + " chat2", chatKey);
+                        chatListener(chatKey);
+                        observeTyping();
+
+                    }
+
+                } else {
+//                    Log.e(TAG + " chat3", chatKey);
+                    conversation.child(fromuserId).child("conversation").child(toUserId).setValue(newThreadKey);
+                    conversation.child(toUserId).child("conversation").child(fromuserId).setValue(newThreadKey);
+                    chatListener(newThreadKey);
+                    observeTyping();
+
+                }
+                endnow = android.os.SystemClock.uptimeMillis();
+                Log.e("DB", startnow + " end " + endnow);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+        conversation.addValueEventListener(chatThreadListener);
+
+    }
+
 
     //adding typing Indicator to firebase message thread
     private void sendTypingStatus(boolean isTyping) {
@@ -273,10 +334,12 @@ public class ChatScreen extends AppCompatActivity {
         }
     }
 
+
     private void chatListener(final String chatKey) {
 
-        Query query = messageRef.child(chatKey).child("messages").orderByChild("timestamp");
-        query.addValueEventListener(new ValueEventListener() {
+
+        query = messageRef.child(chatKey).child("messages").orderByChild("timestamp");
+        messageListener = (new ValueEventListener() {
             @SuppressWarnings("unchecked")
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -329,6 +392,10 @@ public class ChatScreen extends AppCompatActivity {
 
             }
         });
+
+        query.addValueEventListener(messageListener);
+        messageRef.child(chatKey).child("typingIndicator")
+                .child(fromuserId).onDisconnect().setValue(false);
     }
 
     @Override
@@ -439,4 +506,68 @@ public class ChatScreen extends AppCompatActivity {
             }
         }
     }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        sendTypingStatus(false);
+        removeFirebaseListeners();
+    }
+
+    private void observeTyping() {
+        typingListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Log.e(TAG, String.valueOf(dataSnapshot.getValue()));
+                if (dataSnapshot.getValue() != null) {
+                    boolean typing = (boolean) dataSnapshot.getValue();
+                    if (typing)
+                        tvStatus.setText(R.string.typing);
+                    if (!typing)
+                        getStatus();
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        };
+        messageRef.child(chatKey).child("typingIndicator").child(toUserId).addValueEventListener(typingListener);
+
+    }
+
+    private void getStatus() {
+        statusListner = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Log.e(TAG + "typing", String.valueOf(dataSnapshot.getValue()));
+                try {
+                    String userStatus = (String) dataSnapshot.getValue();
+                    if (userStatus.equalsIgnoreCase("online"))
+                        tvStatus.setText(userStatus);
+                } catch (ClassCastException e) {
+                    userStatus = (long) dataSnapshot.getValue();
+                    String activeTime = UserUtils.convertTimeStampToLastSeen(userStatus);
+                    tvStatus.setText(activeTime);
+                }
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        };
+        metaRef.addValueEventListener(statusListner);
+
+    }
+
+    private void removeFirebaseListeners() {
+        conversation.removeEventListener(chatThreadListener);
+        query.removeEventListener(messageListener);
+        metaRef.removeEventListener(statusListner);
+    }
+
+
 }

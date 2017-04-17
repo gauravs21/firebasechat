@@ -55,7 +55,7 @@ public class UserUtils {
             Date date = new Date(currentTime);
             String today = sdf.format(date);
             Calendar cal = Calendar.getInstance();
-            cal.add(Calendar.DATE,-1);
+            cal.add(Calendar.DATE, -1);
             String yesterday = sdf.format(cal.getTimeInMillis());
             Log.e("DB", yesterday);
             if (currentDate.equalsIgnoreCase(today))
@@ -66,6 +66,33 @@ public class UserUtils {
                 time = currentDate;
         }
 
+        return time;
+    }
+
+    public static String convertTimeStampToLastSeen(long userStatus) {
+        String time = "";
+
+        long currentTime = System.currentTimeMillis();
+
+        long diff = currentTime - userStatus;
+        long diffSeconds = diff / 1000 % 60;
+        long minuteDifference = diff / (60 * 1000) % 60;
+        long hoursDifference = diff / (60 * 60 * 1000);
+        int daysDifference = (int) diff / (1000 * 60 * 60 * 24);
+
+        Log.e("DBMinutes", String.valueOf(minuteDifference));
+        Log.e("DBHours", String.valueOf(hoursDifference));
+        Log.e("DBDays", String.valueOf(daysDifference));
+        if (daysDifference > 0) {
+            time = "active " + daysDifference + " days ago";
+        } else if (hoursDifference > 0) {
+            time = "active " + hoursDifference + " hours ago";
+        }
+        else if (minuteDifference>1){
+            time = "active "+ minuteDifference+" minutes ago";
+        }
+        else
+            time = "active few moments ago";
         return time;
     }
 }
