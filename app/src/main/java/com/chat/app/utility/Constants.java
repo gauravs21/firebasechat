@@ -20,6 +20,9 @@ public class Constants {
 
     public class REQUEST_CODE {
         public static final int GET_DOC = 101;
+        public static final int SELECT_FILE = 102;
+        public static final int REQUEST_CAMERA = 103;
+        public static final int REQUEST_WRITE_EXTERNAL_STORAGE = 121;
     }
 
     public class MSG_TYPE {
@@ -29,5 +32,6 @@ public class Constants {
         public static final String PPT = "ppt";
         public static final String EXCEL_SHEET = "excel";
         public static final String PDF = "pdf";
+        public static final String IMAGE = "image";
     }
 }

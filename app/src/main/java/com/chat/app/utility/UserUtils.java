@@ -1,6 +1,12 @@
 package com.chat.app.utility;
 
+import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.MediaStore;
 import android.util.Log;
+
+import com.chat.app.ui.activity.ChatScreen;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -57,7 +63,7 @@ public class UserUtils {
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.DATE, -1);
             String yesterday = sdf.format(cal.getTimeInMillis());
-            Log.e("DB", yesterday);
+//            Log.e("DB", yesterday);
             if (currentDate.equalsIgnoreCase(today))
                 time = "Today";
             else if (currentDate.equals(yesterday))
@@ -79,20 +85,36 @@ public class UserUtils {
         long minuteDifference = diff / (60 * 1000) % 60;
         long hoursDifference = diff / (60 * 60 * 1000);
         int daysDifference = (int) diff / (1000 * 60 * 60 * 24);
-
-        Log.e("DBMinutes", String.valueOf(minuteDifference));
-        Log.e("DBHours", String.valueOf(hoursDifference));
-        Log.e("DBDays", String.valueOf(daysDifference));
+//
+//        Log.e("DBMinutes", String.valueOf(minuteDifference));
+//        Log.e("DBHours", String.valueOf(hoursDifference));
+//        Log.e("DBDays", String.valueOf(daysDifference));
         if (daysDifference > 0) {
             time = "active " + daysDifference + " days ago";
         } else if (hoursDifference > 0) {
             time = "active " + hoursDifference + " hours ago";
-        }
-        else if (minuteDifference>1){
-            time = "active "+ minuteDifference+" minutes ago";
-        }
-        else
+        } else if (minuteDifference > 1) {
+            time = "active " + minuteDifference + " minutes ago";
+        } else
             time = "active few moments ago";
         return time;
+    }
+
+    public static String getImagePath(Context context, Uri imageUri) {
+        String[] projection = {MediaStore.Images.Media.DATA};
+
+        String image_path;
+        Cursor cursor = context.getContentResolver().query(imageUri, projection, null, null, null);
+
+        if (cursor == null) {
+            Log.e("DB", "cursor");
+            image_path = imageUri.getPath();
+        } else {
+            cursor.moveToFirst();
+            int columnIndex = cursor.getColumnIndex(projection[0]);
+            image_path = cursor.getString(columnIndex);
+            cursor.close();
+        }
+        return image_path;
     }
 }

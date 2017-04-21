@@ -38,7 +38,7 @@ public class Chat extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.e("App", "onCreate");
+//        Log.e("App", "onCreate");
         Realm.init(this);
         FirebaseDatabase.getInstance().setPersistenceEnabled(true);
         reference = FirebaseDatabase.getInstance().getReference();
@@ -64,11 +64,11 @@ public class Chat extends Application {
             runningActivities++;
             if (runningActivities >= 1) {
                 if (PrefsUtil.getLogin(Chat.this)) {
-                    Log.e("DB",PrefsUtil.getUserId(Chat.this));
+//                    Log.e("DB",PrefsUtil.getUserId(Chat.this));
                     metaRef = reference.child("meta")
                             .child(PrefsUtil.getUserId(Chat.this)).child("status");
                     metaRef.setValue("online");
-                    Log.e("Appn", "APP IN FOREGROUND");
+//                    Log.e("Appn", "APP IN FOREGROUND");
                 }
             }
 
@@ -90,7 +90,7 @@ public class Chat extends Application {
             runningActivities--;
             if (runningActivities == 0) {
                 if (PrefsUtil.getLogin(Chat.this)) {
-                    Log.e("Appn", "APP IN Background");
+//                    Log.e("Appn", "APP IN Background");
                     metaRef = reference.child("meta")
                             .child(PrefsUtil.getUserId(Chat.this)).child("status");
 

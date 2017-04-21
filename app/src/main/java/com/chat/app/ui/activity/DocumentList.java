@@ -111,27 +111,6 @@ public class DocumentList extends AppCompatActivity {
 
                                 long fileLength = f.length();
 
-//
-//                            if (fileSize > 1024) {
-//                                DecimalFormat decimalFormat = new DecimalFormat("0.00");
-//                                double k= fileSize/1024;
-//                                double m = (fileSize / 1024.0)/1024.0;
-//                                double g = ((fileSize / 1024)/1024.0)/1024.0;
-//                                if (g > 1) {
-//                                    fileSize = g;
-//                                    Log.e("DB", f.getName() + " " + String.valueOf( decimalFormat.format(fileSize)) + " GB");
-//                                } else if (m > 1) {
-//                                    fileSize = m;
-//                                    Log.e("DB", f.getName() + " " + String.valueOf( decimalFormat.format(fileSize)) + " MB");
-//                                } else {
-//                                    fileSize = k;
-//                                    Log.e("DB", f.getName() + " " + String.valueOf( decimalFormat.format(fileSize)) + " KB");
-//                                }
-//
-//                            } else {
-//                                Log.e("DB", f.getName() + " " + String.valueOf(fileSize) + " Bytes");
-//                            }
-
                                 modelArrayList.add(new DocumentModel(f.getAbsolutePath(), f.getName(),
                                         extension, fileLength));
                             }
