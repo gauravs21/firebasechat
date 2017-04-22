@@ -80,7 +80,7 @@ public class ChatScreen extends AppCompatActivity {
     StorageReference storageRef = FirebaseStorage.getInstance().getReference();
     String messageType;
     Query query;
-    int count = 0;
+    int count ;
     private ValueEventListener chatThreadListener, messageListener, typingListener, statusListener;
     private Uri captureImageUri, selectedImageUri;
 
@@ -112,7 +112,7 @@ public class ChatScreen extends AppCompatActivity {
 
         LinearLayoutManager manager = new LinearLayoutManager(this);
         rvMessage.setLayoutManager(manager);
-        adapter = new MessageAdapter(ChatScreen.this, messageArrayList,count);
+        adapter = new MessageAdapter(ChatScreen.this, messageArrayList, count);
         rvMessage.setAdapter(adapter);
         toEmail = getIntent().getStringExtra(EMAIL);
         toUserId = getIntent().getStringExtra(USER_ID);
@@ -200,9 +200,10 @@ public class ChatScreen extends AppCompatActivity {
                     long messageStatus = 0;
                     int fileSize = 0;
                     boolean isRead = false;
+                    final String messageKey = messageRef.child(chatKey).child("messages").push().getKey();
                     final ChatMessage message = new ChatMessage(messageBody, toEmail, fromEmail,
                             time, Constants.MSG_TYPE.NORMAL, fileSize, null, messageStatus, isRead);
-                    final String messageKey = messageRef.child(chatKey).child("messages").push().getKey();
+
 
                     messageRef.child(chatKey).child("messages").child(messageKey).setValue(message).addOnCompleteListener(new OnCompleteListener<Void>() {
                         @Override
@@ -277,8 +278,148 @@ public class ChatScreen extends AppCompatActivity {
         super.onResume();
         messageThreadListener();
         getStatus();
+        count=0;
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.chat_options, menu);
+        return true;
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        sendTypingStatus(false);
+        removeFirebaseListeners();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        super.onOptionsItemSelected(item);
+        switch (item.getItemId()) {
+            case R.id.upload_document:
+                searchDocuments();
+                return true;
+            case R.id.upload_image:
+                if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    imagePicker();
+
+                } else {
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                            Constants.REQUEST_CODE.REQUEST_WRITE_EXTERNAL_STORAGE);
+                }
+            default:
+                return false;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case Constants.REQUEST_CODE.REQUEST_WRITE_EXTERNAL_STORAGE: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    imagePicker();
+                } else {
+                    Toast.makeText(this, "Permissions Denied!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+    }
 
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, final Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        //result ok
+        if (resultCode == Activity.RESULT_OK) {
+            switch (requestCode) {
+                //for doc
+                case Constants.REQUEST_CODE.GET_DOC:
+//                    Log.e("DB", String.valueOf(data));
+
+                    final DocumentModel document = (DocumentModel) data.getSerializableExtra(FILE);
+                    uploadFile(document);
+                    break;
+
+                case Constants.REQUEST_CODE.SELECT_FILE:
+                    selectedImageUri = data.getData();
+
+//                    File file = new File(image_path);
+//                    Log.e("DB" + "Name", image_path + " size " + file.length());
+
+                    uploadImage(selectedImageUri);
+                    break;
+
+                case Constants.REQUEST_CODE.REQUEST_CAMERA:
+                    uploadImage(captureImageUri);
+//                    String capturedPath = UserUtils.getImagePath(this, captureImageUri);
+//                    Uri uploadUri = Uri.fromFile(new File(capturedPath));
+//                    File imageFile = new File(uploadUri.getPath());
+//                    Log.e("DB" + "Name", capturedPath + "size "+ imageFile.length());
+                    break;
+            }
+        }
+    }
+
+    private void getStatus() {
+        statusListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Log.e(TAG + "typing", String.valueOf(dataSnapshot.getValue()));
+                try {
+                    String userStatus = (String) dataSnapshot.getValue();
+                    if (userStatus.equalsIgnoreCase("online"))
+                        tvStatus.setText(userStatus);
+                } catch (ClassCastException e) {
+                    userStatus = (long) dataSnapshot.getValue();
+                    String activeTime = UserUtils.convertTimeStampToLastSeen(userStatus);
+                    tvStatus.setText(activeTime);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        };
+        metaRef.addValueEventListener(statusListener);
+
+    }
+
+    private void observeTyping() {
+        typingListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Log.e(TAG, String.valueOf(dataSnapshot.getValue()));
+                if (dataSnapshot.getValue() != null) {
+                    boolean typing = (boolean) dataSnapshot.getValue();
+                    if (typing)
+                        tvStatus.setText(R.string.typing);
+                    if (!typing)
+                        getStatus();
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        };
+        messageRef.child(chatKey).child("typingIndicator").child(toUserId).addValueEventListener(typingListener);
+
+    }
+
+    //adding typing Indicator to firebase message thread
+    private void sendTypingStatus(boolean isTyping) {
+        if (isTyping) {
+            messageRef.child(chatKey).child("typingIndicator").child(fromuserId).setValue(true);
+        } else {
+            messageRef.child(chatKey).child("typingIndicator").child(fromuserId).setValue(false);
+        }
     }
 
     private void messageThreadListener() {
@@ -331,17 +472,6 @@ public class ChatScreen extends AppCompatActivity {
 
     }
 
-
-    //adding typing Indicator to firebase message thread
-    private void sendTypingStatus(boolean isTyping) {
-        if (isTyping) {
-            messageRef.child(chatKey).child("typingIndicator").child(fromuserId).setValue(true);
-        } else {
-            messageRef.child(chatKey).child("typingIndicator").child(fromuserId).setValue(false);
-        }
-    }
-
-
     private void chatListener(final String chatKey) {
 
 
@@ -353,7 +483,6 @@ public class ChatScreen extends AppCompatActivity {
                 Map<String, Object> chatMap;
                 messageArrayList.clear();
 //                Log.e("DBcount", String.valueOf(dataSnapshot.getChildrenCount()));
-
                 for (DataSnapshot da : dataSnapshot.getChildren()) {
                     if (da.getValue() instanceof Map) {
                         chatMap = (HashMap<String, Object>)
@@ -369,9 +498,19 @@ public class ChatScreen extends AppCompatActivity {
                         chatMessage.setFileLength((long) messageMap.get("fileLength"));
                         chatMessage.setDownloadLink((String) messageMap.get("downloadLink"));
                         chatMessage.setMessageStatus((long) messageMap.get("messageStatus"));
-                        if (!(boolean) messageMap.get("isRead")) {
-                            count++;
-                            Log.e(TAG+"count", String.valueOf(count));
+                        String fromEmail = (String) messageMap.get("from");
+                        Log.e("email", fromEmail);
+                        if (fromEmail.equalsIgnoreCase(toEmail)) {
+                            boolean isRead = ((boolean) messageMap.get("isRead"));
+                            if (!isRead) {
+                                count++;
+                                DatabaseReference update = reference.child("chats").child(chatKey)
+                                        .child("messages").child(da.getKey()).child("isRead");
+                                update.setValue(true);
+                                Log.e(TAG + "count", String.valueOf(count));
+                            }
+
+
                         }
                         messageArrayList.add(chatMessage);
                     }
@@ -395,7 +534,8 @@ public class ChatScreen extends AppCompatActivity {
 //                    }
 //                }
                 adapter.notifyDataSetChanged();
-                rvMessage.scrollToPosition(rvMessage.getAdapter().getItemCount() - 1);
+                rvMessage.scrollToPosition(rvMessage.getAdapter().getItemCount() - (1 + count));
+                count = 0;
             }
 
             @Override
@@ -407,48 +547,6 @@ public class ChatScreen extends AppCompatActivity {
         query.addValueEventListener(messageListener);
         messageRef.child(chatKey).child("typingIndicator")
                 .child(fromuserId).onDisconnect().setValue(false);
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.chat_options, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        super.onOptionsItemSelected(item);
-        switch (item.getItemId()) {
-            case R.id.upload_document:
-                searchDocuments();
-                return true;
-            case R.id.upload_image:
-                if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        == PackageManager.PERMISSION_GRANTED) {
-                    imagePicker();
-
-                } else {
-                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                            Constants.REQUEST_CODE.REQUEST_WRITE_EXTERNAL_STORAGE);
-                }
-            default:
-                return false;
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case Constants.REQUEST_CODE.REQUEST_WRITE_EXTERNAL_STORAGE: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    imagePicker();
-                } else {
-                    Toast.makeText(this, "Permissions Denied!", Toast.LENGTH_SHORT).show();
-                }
-            }
-        }
     }
 
     private void imagePicker() {
@@ -481,45 +579,6 @@ public class ChatScreen extends AppCompatActivity {
             }
         });
         builder.show();
-    }
-
-    private void searchDocuments() {
-//        startActivity();
-        startActivityForResult(new Intent(ChatScreen.this, DocumentList.class), Constants.REQUEST_CODE.GET_DOC);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, final Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        //result ok
-        if (resultCode == Activity.RESULT_OK) {
-            switch (requestCode) {
-                //for doc
-                case Constants.REQUEST_CODE.GET_DOC:
-//                    Log.e("DB", String.valueOf(data));
-
-                    final DocumentModel document = (DocumentModel) data.getSerializableExtra(FILE);
-                    uploadFile(document);
-                    break;
-
-                case Constants.REQUEST_CODE.SELECT_FILE:
-                    selectedImageUri = data.getData();
-
-//                    File file = new File(image_path);
-//                    Log.e("DB" + "Name", image_path + " size " + file.length());
-
-                    uploadImage(selectedImageUri);
-                    break;
-
-                case Constants.REQUEST_CODE.REQUEST_CAMERA:
-                    uploadImage(captureImageUri);
-//                    String capturedPath = UserUtils.getImagePath(this, captureImageUri);
-//                    Uri uploadUri = Uri.fromFile(new File(capturedPath));
-//                    File imageFile = new File(uploadUri.getPath());
-//                    Log.e("DB" + "Name", capturedPath + "size "+ imageFile.length());
-                    break;
-            }
-        }
     }
 
     private void uploadImage(Uri imageUri) {
@@ -569,6 +628,10 @@ public class ChatScreen extends AppCompatActivity {
         });
     }
 
+    private void searchDocuments() {
+//        startActivity();
+        startActivityForResult(new Intent(ChatScreen.this, DocumentList.class), Constants.REQUEST_CODE.GET_DOC);
+    }
 
     private void uploadFile(final DocumentModel document) {
         switch (document.getType()) {
@@ -644,60 +707,6 @@ public class ChatScreen extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        sendTypingStatus(false);
-        removeFirebaseListeners();
-    }
-
-    private void observeTyping() {
-        typingListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                Log.e(TAG, String.valueOf(dataSnapshot.getValue()));
-                if (dataSnapshot.getValue() != null) {
-                    boolean typing = (boolean) dataSnapshot.getValue();
-                    if (typing)
-                        tvStatus.setText(R.string.typing);
-                    if (!typing)
-                        getStatus();
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        };
-        messageRef.child(chatKey).child("typingIndicator").child(toUserId).addValueEventListener(typingListener);
-
-    }
-
-    private void getStatus() {
-        statusListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                Log.e(TAG + "typing", String.valueOf(dataSnapshot.getValue()));
-                try {
-                    String userStatus = (String) dataSnapshot.getValue();
-                    if (userStatus.equalsIgnoreCase("online"))
-                        tvStatus.setText(userStatus);
-                } catch (ClassCastException e) {
-                    userStatus = (long) dataSnapshot.getValue();
-                    String activeTime = UserUtils.convertTimeStampToLastSeen(userStatus);
-                    tvStatus.setText(activeTime);
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        };
-        metaRef.addValueEventListener(statusListener);
-
-    }
 
     private void removeFirebaseListeners() {
         conversation.removeEventListener(chatThreadListener);

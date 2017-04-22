@@ -55,6 +55,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
 
     @Override
     public MessageHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+
         if (viewType == BUBBLE_RECEIVED) {
             View view = LayoutInflater.from(context).inflate(R.layout.bubble_chat_received, parent, false);
             return new MessageHolder(view);
@@ -142,34 +143,18 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
 
                     break;
                 case Constants.MSG_TYPE.PPT:
-//                    holder.ivCoverImage.setBackgroundResource(R.drawable.ppt);
                     holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context, R.drawable.ppt));
-
-//                    Log.e("DB", "in ppt");
                     break;
-//                case Constants.DocumentExtension.PPTX:
-//                    holder.ivCoverImage.setBackgroundResource(R.drawable.ppt);
-//                    break;
+
                 case Constants.MSG_TYPE.EXCEL_SHEET:
-//                    holder.ivCoverImage.setBackground(R.drawable.xls);
                     holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context, R.drawable.xls));
                     break;
-//                case Constants.DocumentExtension.XLSX:
-//                    holder.ivCoverImage.setBackgroundResource(R.drawable.xls);
-//                    break;
                 case Constants.MSG_TYPE.DOC:
-//                    holder.ivCoverImage.setBackgroundResource(R.drawable.doc);
                     holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context, R.drawable.doc));
-
                     break;
-//                case Constants.DocumentExtension.DOCX:
-//                    holder.ivCoverImage.setBackgroundResource(R.drawable.doc);
-//                    break;
                 case Constants.MSG_TYPE.PDF:
                     holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context, R.drawable.pdf));
-
                     break;
-
                 case Constants.MSG_TYPE.IMAGE:
                     holder.relativeLayoutDocument.setVisibility(View.GONE);
                     holder.tvMessageBody.setText("");
@@ -180,6 +165,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
                             .centerCrop()
                             .crossFade()
                             .into(holder.ivUploadedImage);
+                    break;
                 default:
 //                    Log.e("DB", "in switch");
             }
@@ -211,7 +197,6 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
-
                             }
                         });
                     } catch (IOException e) {
@@ -223,6 +208,13 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
     }
 
     @Override
+    public int getItemViewType(int position) {
+        if (chatMessages.get(position).getFrom().equals(PrefsUtil.getEmail(context)))
+            return BUBBLE_SEND;
+        else
+            return BUBBLE_RECEIVED;
+    }
+    @Override
     public int getItemCount() {
         return chatMessages == null ? 0 : chatMessages.size();
     }
@@ -233,8 +225,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
         LinearLayout linearLayout;
         ImageView ivDownload, ivCoverImage, ivStatus, ivUploadedImage;
         int width;
-         float scale = context.getResources().getDisplayMetrics().density;
-
+        float scale = context.getResources().getDisplayMetrics().density;
 
         MessageHolder(View itemView) {
             super(itemView);
@@ -247,30 +238,16 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
             relativeLayoutDocument = (RelativeLayout) itemView.findViewById(R.id.rl_document);
             relativeLayoutImage = (RelativeLayout) itemView.findViewById(R.id.rl_imageView);
             tvFileName = (TextView) itemView.findViewById(R.id.tv_doc_title);
-            tvFileName.setMaxWidth((int) ((width * 0.7)-(40*scale+0.5f)));
+            tvFileName.setMaxWidth((int) ((width * 0.7) - (40 * scale + 0.5f)));
             tvFileSize = (TextView) itemView.findViewById(R.id.tv_doc_size);
             ivDownload = (ImageView) itemView.findViewById(R.id.iv_download);
             ivCoverImage = (ImageView) itemView.findViewById(R.id.iv_cover_type);
             ivUploadedImage = (ImageView) itemView.findViewById(R.id.iv_uploadedImage);
-//            tvFileName.setMaxWidth((int) (width * 0.7));
-
-//            relativeLayout.getLayoutParams().width= (int) (width*0.8);
-//            RelativeLayout.LayoutParams rel_btn = new RelativeLayout.LayoutParams(
-//                    ((int) (width * 0.8)) ,ViewGroup.LayoutParams.WRAP_CONTENT );
-//            relativeLayout.setLayoutParams(rel_btn);
-
             tvChatDate = (TextView) itemView.findViewById(R.id.bubble_chat_day);
             linearLayout = (LinearLayout) itemView.findViewById(R.id.ll_date_layout);
             ivStatus = (ImageView) itemView.findViewById(R.id.iv_message_status);
         }
     }
 
-    @Override
-    public int getItemViewType(int position) {
-        if (chatMessages.get(position).getFrom().equals(PrefsUtil.getEmail(context)))
-            return BUBBLE_SEND;
-        else
-            return BUBBLE_RECEIVED;
-    }
 
 }

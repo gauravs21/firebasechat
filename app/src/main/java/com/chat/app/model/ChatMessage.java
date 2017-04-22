@@ -18,7 +18,8 @@ public class ChatMessage {
     public ChatMessage() {
     }
 
-    public ChatMessage(String messageBody, String toEmail, String fromEmail, long time, String messageType, long fileSize, String link, long messageStatus, boolean isRead) {
+    public ChatMessage(String messageBody, String toEmail, String fromEmail, long time,
+                       String messageType, long fileSize, String link, long messageStatus, boolean isRead) {
         this.messageBody = messageBody;
         this.to = toEmail;
         this.from = fromEmail;
@@ -102,4 +103,5 @@ public class ChatMessage {
     public void setRead(boolean read) {
         isRead = read;
     }
+
 }
