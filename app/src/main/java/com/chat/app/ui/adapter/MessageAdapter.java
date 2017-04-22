@@ -45,8 +45,9 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
     private int viewType = 2;
     private final int BUBBLE_SEND = 0;
     private final int BUBBLE_RECEIVED = 1;
+    private int count = 0;
 
-    public MessageAdapter(Context context, ArrayList<ChatMessage> messageArrayList) {
+    public MessageAdapter(Context context, ArrayList<ChatMessage> messageArrayList, int count) {
         this.context = context;
         this.chatMessages = messageArrayList;
 
@@ -130,6 +131,8 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
             holder.tvMessageBody.setText(chatMessage.getMessageType());
             holder.relativeLayoutDocument.setVisibility(View.VISIBLE);
             holder.relativeLayoutImage.setVisibility(View.GONE);
+
+
 //            Log.e("DB", "in else");
             switch (chatMessage.getMessageType()) {
 
@@ -182,7 +185,6 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
             }
 
 
-
             holder.tvFileName.setText(chatMessage.getMessageBody());
             String fileSize = UserUtils.getFileSize(chatMessage.getFileLength());
             holder.tvFileSize.setText(fileSize);
@@ -230,24 +232,28 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
         RelativeLayout relativeLayoutDocument, relativeLayoutParent, relativeLayoutImage;
         LinearLayout linearLayout;
         ImageView ivDownload, ivCoverImage, ivStatus, ivUploadedImage;
+        int width;
+         float scale = context.getResources().getDisplayMetrics().density;
+
 
         MessageHolder(View itemView) {
             super(itemView);
             tvFrom = (TextView) itemView.findViewById(R.id.tvFrom);
             tvMessageBody = (TextView) itemView.findViewById(R.id.tvMsgBody);
             relativeLayoutParent = (RelativeLayout) itemView.findViewById(R.id.rl_parent);
-            int width = context.getResources().getDisplayMetrics().widthPixels;
-            tvMessageBody.setMaxWidth((int) (width * 0.8));
+            width = context.getResources().getDisplayMetrics().widthPixels;
+            tvMessageBody.setMaxWidth((int) (width * 0.7));
             tvChatTime = (TextView) itemView.findViewById(R.id.tvChatTime);
             relativeLayoutDocument = (RelativeLayout) itemView.findViewById(R.id.rl_document);
             relativeLayoutImage = (RelativeLayout) itemView.findViewById(R.id.rl_imageView);
             tvFileName = (TextView) itemView.findViewById(R.id.tv_doc_title);
-            tvFileName.setMaxWidth((int) (width * 0.8));
+            tvFileName.setMaxWidth((int) ((width * 0.7)-(40*scale+0.5f)));
             tvFileSize = (TextView) itemView.findViewById(R.id.tv_doc_size);
             ivDownload = (ImageView) itemView.findViewById(R.id.iv_download);
             ivCoverImage = (ImageView) itemView.findViewById(R.id.iv_cover_type);
             ivUploadedImage = (ImageView) itemView.findViewById(R.id.iv_uploadedImage);
-            tvFileName.setMaxWidth((int) (width * 0.8));
+//            tvFileName.setMaxWidth((int) (width * 0.7));
+
 //            relativeLayout.getLayoutParams().width= (int) (width*0.8);
 //            RelativeLayout.LayoutParams rel_btn = new RelativeLayout.LayoutParams(
 //                    ((int) (width * 0.8)) ,ViewGroup.LayoutParams.WRAP_CONTENT );

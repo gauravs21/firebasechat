@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Debug;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
@@ -111,7 +112,7 @@ public class ChatScreen extends AppCompatActivity {
 
         LinearLayoutManager manager = new LinearLayoutManager(this);
         rvMessage.setLayoutManager(manager);
-        adapter = new MessageAdapter(ChatScreen.this, messageArrayList);
+        adapter = new MessageAdapter(ChatScreen.this, messageArrayList,count);
         rvMessage.setAdapter(adapter);
         toEmail = getIntent().getStringExtra(EMAIL);
         toUserId = getIntent().getStringExtra(USER_ID);
@@ -368,7 +369,10 @@ public class ChatScreen extends AppCompatActivity {
                         chatMessage.setFileLength((long) messageMap.get("fileLength"));
                         chatMessage.setDownloadLink((String) messageMap.get("downloadLink"));
                         chatMessage.setMessageStatus((long) messageMap.get("messageStatus"));
-                        String isRead= String.valueOf((boolean) messageMap.get("isRead"));
+                        if (!(boolean) messageMap.get("isRead")) {
+                            count++;
+                            Log.e(TAG+"count", String.valueOf(count));
+                        }
                         messageArrayList.add(chatMessage);
                     }
                 }
