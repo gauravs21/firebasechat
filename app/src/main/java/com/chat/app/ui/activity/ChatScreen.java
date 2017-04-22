@@ -70,7 +70,7 @@ public class ChatScreen extends AppCompatActivity {
     StorageReference imageRef;
     DatabaseReference metaRef;
     String toEmail, fromEmail, fileSize, chatKey, newThreadKey, toUserId, fromuserId;
-    public static boolean IS_TYPING = false;
+    public static boolean IS_TYPING = false, screenInstance = false;
     FrameLayout frameLayout;
     EditText etMessage;
     TextView tvName, tvStatus, tvIndicator;
@@ -80,7 +80,7 @@ public class ChatScreen extends AppCompatActivity {
     StorageReference storageRef = FirebaseStorage.getInstance().getReference();
     String messageType;
     Query query;
-    int count ;
+    int count;
     private ValueEventListener chatThreadListener, messageListener, typingListener, statusListener;
     private Uri captureImageUri, selectedImageUri;
 
@@ -278,7 +278,7 @@ public class ChatScreen extends AppCompatActivity {
         super.onResume();
         messageThreadListener();
         getStatus();
-        count=0;
+        count = 0;
     }
 
     @Override
@@ -499,11 +499,16 @@ public class ChatScreen extends AppCompatActivity {
                         chatMessage.setDownloadLink((String) messageMap.get("downloadLink"));
                         chatMessage.setMessageStatus((long) messageMap.get("messageStatus"));
                         String fromEmail = (String) messageMap.get("from");
-                        Log.e("email", fromEmail);
                         if (fromEmail.equalsIgnoreCase(toEmail)) {
                             boolean isRead = ((boolean) messageMap.get("isRead"));
                             if (!isRead) {
-                                count++;
+                                if (!screenInstance) {
+                                    Log.e("DBScreen","screen first time");
+                                    count++;
+                                }
+                                else {
+                                    Log.e("DBScreen","screen already open");
+                                }
                                 DatabaseReference update = reference.child("chats").child(chatKey)
                                         .child("messages").child(da.getKey()).child("isRead");
                                 update.setValue(true);
@@ -514,6 +519,7 @@ public class ChatScreen extends AppCompatActivity {
                         }
                         messageArrayList.add(chatMessage);
                     }
+                    screenInstance=true;
                 }
 //
 //
@@ -534,7 +540,8 @@ public class ChatScreen extends AppCompatActivity {
 //                    }
 //                }
                 adapter.notifyDataSetChanged();
-                rvMessage.scrollToPosition(rvMessage.getAdapter().getItemCount() - (1 + count));
+                rvMessage.scrollToPosition(rvMessage.getAdapter().getItemCount() - 1);
+
                 count = 0;
             }
 
