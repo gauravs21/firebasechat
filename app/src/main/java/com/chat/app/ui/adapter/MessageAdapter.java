@@ -15,6 +15,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.chat.app.R;
 import com.chat.app.model.ChatMessage;
 import com.chat.app.utility.Constants;
@@ -31,6 +32,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Locale;
 
 /*
@@ -43,8 +45,9 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
     private int viewType = 2;
     private final int BUBBLE_SEND = 0;
     private final int BUBBLE_RECEIVED = 1;
+    private int count = 0;
 
-    public MessageAdapter(Context context, ArrayList<ChatMessage> messageArrayList) {
+    public MessageAdapter(Context context, ArrayList<ChatMessage> messageArrayList, int count) {
         this.context = context;
         this.chatMessages = messageArrayList;
 
@@ -52,6 +55,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
 
     @Override
     public MessageHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+
         if (viewType == BUBBLE_RECEIVED) {
             View view = LayoutInflater.from(context).inflate(R.layout.bubble_chat_received, parent, false);
             return new MessageHolder(view);
@@ -63,9 +67,25 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
     @Override
     public void onBindViewHolder(MessageHolder holder, int position) {
         final float SCALE = context.getResources().getDisplayMetrics().density;
-
         final ChatMessage chatMessage = chatMessages.get(position);
-//        Log.e("DB", chatMessage.getFrom() + " " + chatMessage.getMessageBody() + " " + PrefsUtil.getEmail(context));
+
+        long currentChatTimestamp = chatMessage.getTimestamp();
+        Date currDate = new Date(currentChatTimestamp);
+        Date previousDate = new Date(0);
+        if (position != 0) {
+            long previousChatTimestamp = chatMessages.get(holder.getAdapterPosition() - 1).getTimestamp();
+            previousDate = new Date(previousChatTimestamp);
+//            Log.e("DB12", String.valueOf(previousChatTimestamp));
+        }
+
+        String printableDate = UserUtils.getPrintableDate(currDate, previousDate);
+        if (!printableDate.isEmpty()) {
+            holder.linearLayout.setVisibility(View.VISIBLE);
+            holder.tvChatDate.setText(printableDate);
+        } else {
+            holder.linearLayout.setVisibility(View.GONE);
+        }
+
 
         LinearLayout.LayoutParams relativeParams =
                 (LinearLayout.LayoutParams) holder.relativeLayoutParent.getLayoutParams();
@@ -74,17 +94,25 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
         if (chatMessage.getFrom().equals(PrefsUtil.getEmail(context))) {
             relativeParams.setMargins((int) (4 * SCALE + 0.5f), 0, (int) (16 * SCALE + 0.5f), 0);  // left, top, right, bottom
 
+            holder.ivDownload.setVisibility(View.GONE);
             holder.tvFrom.setTextColor(ContextCompat.getColor(context, R.color.chat_box_received));
-            holder.relativeLayout.setBackgroundColor(ContextCompat.getColor(context, R.color.chat_box_received));
+            holder.relativeLayoutDocument.setBackgroundColor(ContextCompat.getColor(context, R.color.chat_box_received));
             holder.tvMessageBody.setTextColor(ContextCompat.getColor(context, R.color.chat_box_received));
             holder.tvChatTime.setTextColor(ContextCompat.getColor(context, R.color.chat_box_received));
             holder.tvFileName.setTextColor(ContextCompat.getColor(context, R.color.chat_box_send));
             holder.tvFileSize.setTextColor(ContextCompat.getColor(context, R.color.chat_box_send));
+//            Log.e("DB", String.valueOf(chatMessage.getMessageStatus()));
+            if (chatMessage.getMessageStatus() == 1) {
+                holder.ivStatus.setBackground(ContextCompat.getDrawable(context, R.drawable.ic_check_black_18dp));
+            } else if (chatMessage.getMessageStatus() == 2) {
+                holder.ivStatus.setBackground(ContextCompat.getDrawable(context, R.drawable.ic_done_all_black_18dp));
+            } else
+                holder.ivStatus.setBackground(ContextCompat.getDrawable(context, R.drawable.ic_access_time_black_18dp));
 
         } else {
             relativeParams.setMargins((int) (16 * SCALE + 0.5f), 0, (int) (4 * SCALE + 0.5f), 0);  // left, top, right, bottom
             holder.tvFrom.setTextColor(ContextCompat.getColor(context, R.color.chat_box_send));
-            holder.relativeLayout.setBackgroundColor(ContextCompat.getColor(context, R.color.chat_box_send));
+            holder.relativeLayoutDocument.setBackgroundColor(ContextCompat.getColor(context, R.color.chat_box_send));
             holder.tvMessageBody.setTextColor(ContextCompat.getColor(context, R.color.chat_box_send));
             holder.tvChatTime.setTextColor(ContextCompat.getColor(context, R.color.chat_box_send));
             holder.tvFileName.setTextColor(ContextCompat.getColor(context, R.color.chat_box_received));
@@ -98,50 +126,51 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
 
         if (messageType.equals(Constants.MSG_TYPE.NORMAL)) {
             holder.tvMessageBody.setText(chatMessage.getMessageBody());
-            holder.relativeLayout.setVisibility(View.GONE);
+            holder.relativeLayoutDocument.setVisibility(View.GONE);
         } else {
 
-            Log.e("DB","in else");
+            holder.tvMessageBody.setText(chatMessage.getMessageType());
+            holder.relativeLayoutDocument.setVisibility(View.VISIBLE);
+            holder.relativeLayoutImage.setVisibility(View.GONE);
+
+
+//            Log.e("DB", "in else");
             switch (chatMessage.getMessageType()) {
 
                 case Constants.MSG_TYPE.TEXT:
 //                    holder.ivCoverImage.setBackgroundResource(R.drawable.txt);
-                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context,R.drawable.txt));
+                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context, R.drawable.txt));
 
                     break;
                 case Constants.MSG_TYPE.PPT:
-//                    holder.ivCoverImage.setBackgroundResource(R.drawable.ppt);
-                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context,R.drawable.ppt));
-
-                    Log.e("DB","in ppt");
+                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context, R.drawable.ppt));
                     break;
-//                case Constants.DocumentExtension.PPTX:
-//                    holder.ivCoverImage.setBackgroundResource(R.drawable.ppt);
-//                    break;
+
                 case Constants.MSG_TYPE.EXCEL_SHEET:
-//                    holder.ivCoverImage.setBackground(R.drawable.xls);
-                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context,R.drawable.xls));
+                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context, R.drawable.xls));
                     break;
-//                case Constants.DocumentExtension.XLSX:
-//                    holder.ivCoverImage.setBackgroundResource(R.drawable.xls);
-//                    break;
                 case Constants.MSG_TYPE.DOC:
-//                    holder.ivCoverImage.setBackgroundResource(R.drawable.doc);
-                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context,R.drawable.doc));
-
+                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context, R.drawable.doc));
                     break;
-//                case Constants.DocumentExtension.DOCX:
-//                    holder.ivCoverImage.setBackgroundResource(R.drawable.doc);
-//                    break;
                 case Constants.MSG_TYPE.PDF:
-                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context,R.drawable.pdf));
-
+                    holder.ivCoverImage.setBackground(ContextCompat.getDrawable(context, R.drawable.pdf));
                     break;
-                default:Log.e("DB","in switch");
+                case Constants.MSG_TYPE.IMAGE:
+                    holder.relativeLayoutDocument.setVisibility(View.GONE);
+                    holder.tvMessageBody.setText("");
+                    holder.relativeLayoutImage.setVisibility(View.VISIBLE);
+                    Glide
+                            .with(context)
+                            .load(chatMessage.getDownloadLink())
+                            .centerCrop()
+                            .crossFade()
+                            .into(holder.ivUploadedImage);
+                    break;
+                default:
+//                    Log.e("DB", "in switch");
             }
 
 
-            holder.tvMessageBody.setText(chatMessage.getMessageType());
             holder.tvFileName.setText(chatMessage.getMessageBody());
             String fileSize = UserUtils.getFileSize(chatMessage.getFileLength());
             holder.tvFileSize.setText(fileSize);
@@ -168,7 +197,6 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
-
                             }
                         });
                     } catch (IOException e) {
@@ -180,39 +208,46 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
     }
 
     @Override
-    public int getItemCount() {
-        return chatMessages == null ? 0 : chatMessages.size();
-    }
-
-    class MessageHolder extends RecyclerView.ViewHolder {
-        TextView tvFrom, tvMessageBody, tvChatTime, tvFileName, tvFileSize;
-        RelativeLayout relativeLayout, relativeLayoutParent;
-        ImageView ivDownload, ivCoverImage;
-
-        MessageHolder(View itemView) {
-            super(itemView);
-            tvFrom = (TextView) itemView.findViewById(R.id.tvFrom);
-            tvMessageBody = (TextView) itemView.findViewById(R.id.tvMsgBody);
-            relativeLayoutParent = (RelativeLayout) itemView.findViewById(R.id.rl_parent);
-            int width = context.getResources().getDisplayMetrics().widthPixels;
-            tvMessageBody.setMaxWidth((int) (width * 0.8));
-            tvChatTime = (TextView) itemView.findViewById(R.id.tvChatTime);
-            relativeLayout = (RelativeLayout) itemView.findViewById(R.id.rl_document);
-            tvFileName = (TextView) itemView.findViewById(R.id.tv_doc_title);
-            tvFileSize = (TextView) itemView.findViewById(R.id.tv_doc_size);
-            ivDownload = (ImageView) itemView.findViewById(R.id.iv_download);
-            ivCoverImage = (ImageView) itemView.findViewById(R.id.iv_cover_type);
-            tvFileName.setMaxWidth((int) (width * 0.8));
-
-        }
-    }
-
-    @Override
     public int getItemViewType(int position) {
         if (chatMessages.get(position).getFrom().equals(PrefsUtil.getEmail(context)))
             return BUBBLE_SEND;
         else
             return BUBBLE_RECEIVED;
     }
+    @Override
+    public int getItemCount() {
+        return chatMessages == null ? 0 : chatMessages.size();
+    }
+
+    class MessageHolder extends RecyclerView.ViewHolder {
+        TextView tvFrom, tvMessageBody, tvChatTime, tvFileName, tvFileSize, tvChatDate;
+        RelativeLayout relativeLayoutDocument, relativeLayoutParent, relativeLayoutImage;
+        LinearLayout linearLayout;
+        ImageView ivDownload, ivCoverImage, ivStatus, ivUploadedImage;
+        int width;
+        float scale = context.getResources().getDisplayMetrics().density;
+
+        MessageHolder(View itemView) {
+            super(itemView);
+            tvFrom = (TextView) itemView.findViewById(R.id.tvFrom);
+            tvMessageBody = (TextView) itemView.findViewById(R.id.tvMsgBody);
+            relativeLayoutParent = (RelativeLayout) itemView.findViewById(R.id.rl_parent);
+            width = context.getResources().getDisplayMetrics().widthPixels;
+            tvMessageBody.setMaxWidth((int) (width * 0.7));
+            tvChatTime = (TextView) itemView.findViewById(R.id.tvChatTime);
+            relativeLayoutDocument = (RelativeLayout) itemView.findViewById(R.id.rl_document);
+            relativeLayoutImage = (RelativeLayout) itemView.findViewById(R.id.rl_imageView);
+            tvFileName = (TextView) itemView.findViewById(R.id.tv_doc_title);
+            tvFileName.setMaxWidth((int) ((width * 0.7) - (40 * scale + 0.5f)));
+            tvFileSize = (TextView) itemView.findViewById(R.id.tv_doc_size);
+            ivDownload = (ImageView) itemView.findViewById(R.id.iv_download);
+            ivCoverImage = (ImageView) itemView.findViewById(R.id.iv_cover_type);
+            ivUploadedImage = (ImageView) itemView.findViewById(R.id.iv_uploadedImage);
+            tvChatDate = (TextView) itemView.findViewById(R.id.bubble_chat_day);
+            linearLayout = (LinearLayout) itemView.findViewById(R.id.ll_date_layout);
+            ivStatus = (ImageView) itemView.findViewById(R.id.iv_message_status);
+        }
+    }
+
 
 }

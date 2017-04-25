@@ -121,7 +121,7 @@ public class LoginScreen extends AppCompatActivity implements GoogleApiClient.On
                                 for (DataSnapshot data :
                                         dataSnapshot.getChildren()) {
                                     if (data.child("email").getValue().equals(user.getEmail())) {
-                                        Log.e("DBSS", "value exists");
+                                        Log.e("DB", "value exists");
                                         isPresent=true;
                                         break;
                                     } else {
@@ -147,9 +147,10 @@ public class LoginScreen extends AppCompatActivity implements GoogleApiClient.On
                     });
                     Log.e("DB", String.valueOf((task.getResult().getUser().getEmail())));
 
-
                     Intent intent = new Intent(LoginScreen.this, HomeActivity.class);
+                    PrefsUtil.setLoginStatus(LoginScreen.this,true);
                     startActivity(intent);
+
                 }
             }
         });

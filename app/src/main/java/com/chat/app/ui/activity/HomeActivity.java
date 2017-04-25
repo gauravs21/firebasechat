@@ -51,18 +51,20 @@ public class HomeActivity extends AppCompatActivity {
                 Map<String, Object> userMap = (HashMap<String, Object>)
                         dataSnapshot.getValue();
                 ArrayList<User> userArrayList = new ArrayList<>();
-                for (Object object :
-                        userMap.values()) {
-                    if (object instanceof Map) {
-                        Map<String, Object> mapObj = (Map<String, Object>) object;
-                        User itemsReceived = new User();
-                        if (!mapObj.get("email").equals(PrefsUtil.getEmail(HomeActivity.this))) {
-                            itemsReceived.setEmail((String) mapObj.get("email"));
-                            itemsReceived.setDevice_token((String) mapObj.get("device_token"));
-                            itemsReceived.setUserId((String)mapObj.get("userId"));
-                            userArrayList.add(itemsReceived);
-                        }
+                if (dataSnapshot.getChildrenCount()>0) {
+                    for (Object object :
+                            userMap.values()) {
+                        if (object instanceof Map) {
+                            Map<String, Object> mapObj = (Map<String, Object>) object;
+                            User itemsReceived = new User();
+                            if (!mapObj.get("email").equals(PrefsUtil.getEmail(HomeActivity.this))) {
+                                itemsReceived.setEmail((String) mapObj.get("email"));
+                                itemsReceived.setDevice_token((String) mapObj.get("device_token"));
+                                itemsReceived.setUserId((String) mapObj.get("userId"));
+                                userArrayList.add(itemsReceived);
+                            }
 
+                        }
                     }
                 }
                 Log.e("DB", String.valueOf(userArrayList.size()));

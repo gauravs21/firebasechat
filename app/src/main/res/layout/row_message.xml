@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="wrap_content"
     android:id="@+id/rl_parent"
+    android:layout_width="wrap_content"
     android:layout_height="match_parent">
 
     <TextView
@@ -14,13 +14,24 @@
         android:textSize="14sp" />
 
     <RelativeLayout
+
+        android:id="@+id/rl_file"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/tvFrom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+    <RelativeLayout
+
         android:id="@+id/rl_document"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_below="@+id/tvFrom"
-        android:background="@color/chat_box_send">
+        android:background="@color/chat_box_send"
+        android:paddingBottom="4dp"
+        android:paddingTop="4dp">
 
         <ImageView
             android:id="@+id/iv_download"
@@ -35,9 +46,8 @@
             android:id="@+id/iv_cover_type"
             android:layout_width="40dp"
             android:layout_height="40dp"
-
             android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"/>
+            android:layout_alignParentStart="true" />
 
 
         <TextView
@@ -47,6 +57,8 @@
             android:layout_alignParentTop="true"
             android:layout_toEndOf="@+id/iv_cover_type"
             android:layout_toRightOf="@+id/iv_cover_type"
+            android:paddingEnd="4dp"
+            android:paddingRight="4dp"
             android:textSize="16sp" />
 
         <TextView
@@ -60,6 +72,42 @@
 
 
     </RelativeLayout>
+        <RelativeLayout
+            android:visibility="gone"
+            android:id="@+id/rl_imageView"
+            android:layout_width="250dp"
+            android:layout_height="250dp">
+            <ImageView
+                android:id="@+id/iv_uploadedImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <ProgressBar
+                android:visibility="gone"
+                android:id="@+id/rl_image_pb"
+                style="?android:attr/progressBarStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:layout_marginTop="29dp" />
+
+            <TextView
+                android:visibility="gone"
+                android:id="@+id/rl_image_retry"
+                android:textColor="@color/chat_box_received"
+                android:textStyle="bold"
+                android:padding="8dp"
+                android:textSize="18sp"
+                android:background="@drawable/chat_bubble_background"
+                android:text="@string/retry"
+                android:layout_centerInParent="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+        </RelativeLayout>
+
+    </RelativeLayout>
+
 
     <!--</RelativeLayout>-->
 
@@ -73,7 +121,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_below="@+id/rl_document"
+        android:layout_below="@+id/rl_file"
         android:text="@string/chat_hint_type_a_message"
         android:textColor="@color/chat_box_received"
         android:textSize="16sp" />
@@ -82,10 +130,23 @@
         android:id="@+id/tvChatTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
         android:layout_below="@+id/tvMsgBody"
         android:text="04:20 pm"
         android:textSize="14sp" />
+
+    <ImageView
+        android:layout_marginTop="2dp"
+        android:id="@+id/iv_message_status"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:layout_marginStart="4dp"
+        android:layout_below="@+id/tvMsgBody"
+        android:layout_toRightOf="@+id/tvChatTime"
+        android:layout_toEndOf="@+id/tvChatTime"
+        android:layout_marginLeft="4dp" />
+
+
+
+
 
 </RelativeLayout>
